@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>petBTI · 宠物人格测评系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg:#000; --surface:#0a0a0a; --surface-2:#111;
+  --white:#fff; --silver:#a6a6a6;
+  --blue:#0099ff; --blue-glow:rgba(0,153,255,0.15);
+  --frosted:rgba(255,255,255,0.08); --frosted-h:rgba(255,255,255,0.13);
+  --ring:0 0 0 1px rgba(0,153,255,0.2);
+  --ring-a:0 0 0 1.5px #0099ff;
+  --elev:rgba(255,255,255,0.06) 0px 0.5px 0px 0.5px,rgba(0,0,0,0.5) 0px 10px 30px;
+}
+html,body { height:100%; font-family:'Inter',-apple-system,system-ui,sans-serif; background:var(--bg); color:var(--white); overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+.screen { display:none; min-height:100vh; flex-direction:column; }
+.screen.active { display:flex; animation:sIn .5s cubic-bezier(.16,1,.3,1) forwards; }
+@keyframes sIn { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+/* WELCOME */
+#screen-welcome { justify-content:space-between; padding:60px 24px 48px; position:relative; overflow:hidden; }
+.w-glow { position:absolute; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle,rgba(0,153,255,.12) 0%,transparent 70%); top:-200px; left:50%; transform:translateX(-50%); pointer-events:none; }
+.w-top { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.eyebrow { display:inline-flex; align-items:center; gap:6px; background:var(--frosted); box-shadow:var(--ring); border-radius:100px; padding:5px 14px; font-size:11px; font-weight:500; color:var(--silver); letter-spacing:.5px; margin-bottom:28px; align-self:flex-start; }
+.eyebrow::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--blue); display:inline-block; }
+.w-title { font-size:clamp(72px,22vw,96px); font-weight:700; line-height:.88; letter-spacing:-6px; margin-bottom:20px; }
+.w-title em { font-style:normal; color:var(--blue); }
+.w-desc { font-size:15px; color:var(--silver); line-height:1.6; max-width:280px; letter-spacing:-.1px; margin-bottom:40px; }
+.inp-label { display:block; font-size:11px; font-weight:500; color:var(--silver); letter-spacing:.8px; text-transform:uppercase; margin-bottom:8px; }
+.inp { width:100%; background:var(--frosted); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:14px 18px; font-size:16px; font-family:inherit; color:var(--white); outline:none; transition:border-color .2s,box-shadow .2s; -webkit-appearance:none; appearance:none; margin-bottom:12px; }
+.inp::placeholder { color:rgba(255,255,255,.2); }
+.inp:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-glow); }
+.btn-p { width:100%; background:var(--white); color:#000; border:none; border-radius:100px; padding:16px; font-size:15px; font-weight:600; font-family:inherit; letter-spacing:-.3px; cursor:pointer; transition:opacity .2s,transform .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-p:active { transform:scale(.97); opacity:.9; }
+.btn-p .arr { width:20px; height:20px; background:rgba(0,0,0,.08); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; }
+.w-meta { margin-top:16px; font-size:12px; color:rgba(255,255,255,.25); text-align:center; }
+
+/* QUIZ */
+.q-nav { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
+.q-back { width:32px; height:32px; border-radius:50%; background:var(--frosted); box-shadow:var(--ring); border:none; color:var(--silver); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.q-back:active { background:var(--frosted-h); }
+.q-ctr { font-size:12px; font-weight:500; color:var(--silver); }
+.q-prog { padding:16px 24px 0; }
+.p-track { height:2px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.p-fill { height:100%; background:var(--blue); border-radius:2px; transition:width .5s cubic-bezier(.4,0,.2,1); box-shadow:0 0 8px var(--blue); }
+.q-body { padding:32px 24px 40px; flex:1; display:flex; flex-direction:column; }
+.q-tag { display:inline-flex; align-items:center; gap:6px; background:var(--frosted); box-shadow:var(--ring); border-radius:100px; padding:4px 12px; font-size:12px; font-weight:500; color:var(--silver); margin-bottom:24px; align-self:flex-start; }
+.q-num { font-size:11px; font-weight:500; color:var(--blue); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+.q-text { font-size:22px; font-weight:600; line-height:1.35; letter-spacing:-.6px; color:var(--white); margin-bottom:32px; }
+.opts { display:flex; flex-direction:column; gap:10px; }
+.opt { background:var(--surface); box-shadow:var(--ring); border:none; border-radius:14px; padding:16px 18px; font-size:14px; font-family:inherit; color:var(--silver); cursor:pointer; text-align:left; line-height:1.5; transition:box-shadow .2s,background .2s,color .2s; display:flex; align-items:flex-start; gap:14px; }
+.opt:active { background:var(--surface-2); }
+.opt-l { flex-shrink:0; width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,.05); color:rgba(255,255,255,.25); font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; transition:all .2s; margin-top:1px; }
+.opt-t { flex:1; }
+.opt.sel { box-shadow:var(--ring-a),0 0 20px var(--blue-glow); background:rgba(0,153,255,.06); color:var(--white); animation:oP .3s ease; }
+.opt.sel .opt-l { background:var(--blue); color:#fff; }
+@keyframes oP { 0%{transform:scale(1)} 40%{transform:scale(1.02)} 100%{transform:scale(1)} }
+
+/* LOADING */
+#screen-loading { align-items:center; justify-content:center; position:relative; }
+.l-ring { position:absolute; border-radius:50%; border:1px solid rgba(0,153,255,.15); animation:rP 2s ease-in-out infinite; }
+.l-ring:nth-child(1){width:240px;height:240px}
+.l-ring:nth-child(2){width:160px;height:160px;animation-delay:.4s;border-color:rgba(0,153,255,.25)}
+.l-ring:nth-child(3){width:80px;height:80px;animation-delay:.8s;border-color:rgba(0,153,255,.5)}
+@keyframes rP { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.08);opacity:1} }
+.l-ctr { position:relative; z-index:1; text-align:center; }
+.l-icon { font-size:32px; display:block; margin-bottom:20px; animation:iS 3s linear infinite; }
+@keyframes iS { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+.l-lbl { font-size:13px; font-weight:500; color:var(--silver); margin-bottom:24px; }
+.l-bar { width:120px; height:2px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; margin:0 auto; }
+.l-fill { height:100%; background:var(--blue); border-radius:2px; animation:lP 1.6s cubic-bezier(.4,0,.2,1) forwards; box-shadow:0 0 6px var(--blue); }
+@keyframes lP { from{width:0%} to{width:100%} }
+
+/* RESULT */
+#screen-result { background:var(--bg); overflow-y:auto; }
+.r-hero { padding:44px 24px 36px; position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.06); }
+.r-hero-glow { position:absolute; width:360px; height:360px; border-radius:50%; background:radial-gradient(circle,rgba(0,153,255,.14) 0%,transparent 65%); top:-80px; right:-80px; pointer-events:none; }
+
+/* Avatar */
+.r-avatar { width:180px; height:180px; border-radius:20px; overflow:hidden; margin:0 auto 24px; box-shadow:0 0 0 1px rgba(0,153,255,.25),0 0 32px rgba(0,153,255,.12); display:flex; align-items:center; justify-content:center; }
+.r-avatar svg { width:100%; height:100%; }
+
+.r-eyebrow { display:inline-flex; align-items:center; gap:6px; background:var(--frosted); box-shadow:var(--ring); border-radius:100px; padding:5px 14px; font-size:11px; font-weight:500; color:var(--silver); letter-spacing:.5px; margin-bottom:16px; }
+.r-for { font-size:13px; font-weight:500; color:var(--silver); margin-bottom:10px; }
+.r-type { font-size:clamp(22px,6vw,28px); font-weight:600; line-height:1; letter-spacing:2px; color:rgba(255,255,255,.45); margin-bottom:10px; text-transform:uppercase; }
+.r-type .hi { color:rgba(0,153,255,.7); }
+.r-nick { font-size:clamp(30px,9vw,42px); font-weight:700; line-height:.95; letter-spacing:-1.5px; color:var(--white); margin-bottom:22px; }
+.r-nick::before { display:none; }
+
+/* Confidence */
+.conf-row { display:flex; align-items:center; gap:12px; background:var(--frosted); border-radius:12px; padding:12px 16px; box-shadow:var(--ring); }
+.conf-main { flex:1; }
+.conf-lbl { font-size:11px; font-weight:500; color:var(--silver); letter-spacing:.5px; margin-bottom:6px; }
+.conf-track { height:3px; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; }
+.conf-fill { height:100%; background:var(--blue); border-radius:3px; box-shadow:0 0 6px var(--blue); transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+.conf-pct { font-size:22px; font-weight:700; color:var(--white); letter-spacing:-1px; line-height:1; flex-shrink:0; }
+.conf-pct span { font-size:12px; font-weight:400; color:var(--silver); }
+.conf-hit { font-size:11px; color:var(--silver); margin-top:4px; }
+.conf-hit em { font-style:normal; color:var(--blue); font-weight:600; }
+
+/* Result cards */
+.r-body { padding:20px 20px 48px; display:flex; flex-direction:column; gap:12px; }
+.rc { background:var(--surface); box-shadow:var(--ring),var(--elev); border-radius:16px; overflow:hidden; }
+.rc-head { padding:13px 18px; border-bottom:1px solid rgba(255,255,255,.05); display:flex; align-items:center; gap:8px; }
+.rc-head .dot { width:6px; height:6px; border-radius:50%; background:var(--blue); }
+.rc-head .lbl { font-size:11px; font-weight:600; color:rgba(255,255,255,.3); letter-spacing:1px; text-transform:uppercase; }
+
+.roast-txt { padding:18px; font-size:15px; font-weight:400; line-height:1.8; color:var(--silver); letter-spacing:-.1px; }
+
+/* Traits */
+.traits-g { padding:16px 18px; display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
+.tr-item { display:flex; flex-direction:column; gap:6px; }
+.tr-name { font-size:11px; font-weight:500; color:rgba(255,255,255,.4); }
+.tr-dots { display:flex; gap:4px; }
+.dp { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.08); transition:background .8s,box-shadow .8s; }
+.dp.on { background:var(--blue); box-shadow:0 0 5px rgba(0,153,255,.6); }
+.tr-val { font-size:10px; font-weight:600; letter-spacing:.5px; margin-top:-2px; }
+.tr-val.H { color:var(--blue); }
+.tr-val.M { color:rgba(255,255,255,.4); }
+.tr-val.L { color:rgba(255,255,255,.2); }
+
+/* Tips */
+.tips-l { padding:16px 18px; display:flex; flex-direction:column; gap:14px; }
+.tip { display:flex; gap:12px; align-items:flex-start; }
+.tip-n { flex-shrink:0; width:20px; height:20px; border-radius:50%; background:var(--blue-glow); box-shadow:0 0 0 1px rgba(0,153,255,.3); color:var(--blue); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.tip-t { font-size:14px; line-height:1.6; color:var(--silver); flex:1; }
+
+/* Dims */
+.dims-g { padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+.dim-row { display:grid; grid-template-columns:18px 1fr 18px; align-items:center; gap:10px; }
+.dim-l,.dim-r { font-size:11px; font-weight:600; color:rgba(255,255,255,.2); text-align:center; }
+.dim-l.hi,.dim-r.hi { color:var(--white); }
+.dim-track { height:3px; background:rgba(255,255,255,.06); border-radius:3px; overflow:hidden; }
+.dim-fill { height:100%; border-radius:3px; background:var(--blue); box-shadow:0 0 6px var(--blue); transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+
+/* Compat */
+.compat-txt { padding:18px; font-size:14px; line-height:1.75; color:var(--silver); }
+.compat-tag { display:inline-block; background:var(--blue-glow); box-shadow:0 0 0 1px rgba(0,153,255,.25); color:var(--blue); font-size:11px; font-weight:600; padding:3px 10px; border-radius:100px; margin-bottom:10px; }
+
+/* Buttons */
+.btn-w { width:100%; background:var(--white); color:#000; border:none; border-radius:100px; padding:16px; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; transition:opacity .2s,transform .15s; }
+.btn-w:active { transform:scale(.97); opacity:.9; }
+.btn-g { width:100%; background:var(--frosted); color:var(--silver); border:none; box-shadow:var(--ring); border-radius:100px; padding:14px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer; transition:background .2s,transform .15s; }
+.btn-g:active { transform:scale(.97); background:var(--frosted-h); }
+
+/* Toast */
+.toast { position:fixed; bottom:40px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--surface-2); box-shadow:var(--ring),var(--elev); color:var(--white); padding:10px 20px; border-radius:100px; font-size:13px; font-weight:500; opacity:0; transition:all .3s cubic-bezier(.16,1,.3,1); pointer-events:none; white-space:nowrap; z-index:9999; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- WELCOME -->
+<div id="screen-welcome" class="screen active">
+  <div class="w-glow"></div>
+  <div class="w-top" style="position:relative;z-index:1">
+    <div class="eyebrow">v1.0 · The Lexicon</div>
+    <div class="w-title">pet<em>BTI</em></div>
+    <div class="w-desc">12 道行为题，破解你家主子的真实人格类型。</div>
+  </div>
+  <div style="position:relative;z-index:1">
+    <label class="inp-label">主子的名字</label>
+    <input class="inp" type="text" id="pet-name-input" placeholder="橘猫、二狗子…" maxlength="10" onkeydown="if(event.key==='Enter')startQuiz()">
+    <button class="btn-p" onclick="startQuiz()">开始测评 <span class="arr">→</span></button>
+    <div class="w-meta">共 12 题 · 约 2 分钟</div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="screen-quiz" class="screen">
+  <div class="q-nav">
+    <button class="q-back" onclick="goBack()">←</button>
+    <div class="q-ctr" id="q-ctr">1 / 12</div>
+  </div>
+  <div class="q-prog"><div class="p-track"><div class="p-fill" id="p-fill" style="width:8.33%"></div></div></div>
+  <div class="q-body">
+    <div class="q-tag">🐾 <span id="q-pet">主子</span></div>
+    <div class="q-num" id="q-num">Q01</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="opts" id="opts"></div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen">
+  <div class="l-ring"></div><div class="l-ring"></div><div class="l-ring"></div>
+  <div class="l-ctr">
+    <span class="l-icon">🐾</span>
+    <div class="l-lbl">正在解析人格矩阵…</div>
+    <div class="l-bar"><div class="l-fill"></div></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div class="r-hero">
+    <div class="r-hero-glow"></div>
+    <div class="r-eyebrow eyebrow">petBTI TYPE RESULT</div>
+    <div class="r-avatar" id="r-avatar"></div>
+    <div class="r-for" id="r-for">你家主子</div>
+    <div class="r-nick" id="r-nick">吗喽 MONKEY-er</div>
+    <div class="r-type" id="r-type">ENFP</div>
+    <div class="conf-row">
+      <div class="conf-main">
+        <div class="conf-lbl">置信度</div>
+        <div class="conf-track"><div class="conf-fill" id="c-fill" style="width:0%"></div></div>
+        <div class="conf-hit" id="c-hit">精准命中 <em>—</em> / 12 题</div>
+      </div>
+      <div class="conf-pct" id="c-pct">—<span>%</span></div>
+    </div>
+  </div>
+
+  <div class="r-body">
+    <div class="rc">
+      <div class="rc-head"><div class="dot"></div><div class="lbl">毒舌解析 · THE ROAST</div></div>
+      <div class="roast-txt" id="r-roast"></div>
+    </div>
+    <div class="rc">
+      <div class="rc-head"><div class="dot"></div><div class="lbl">主子特征图鉴</div></div>
+      <div class="traits-g" id="r-traits"></div>
+    </div>
+    <div class="rc">
+      <div class="rc-head"><div class="dot"></div><div class="lbl">铲屎官生存指南</div></div>
+      <div class="tips-l" id="r-tips"></div>
+    </div>
+    <div class="rc">
+      <div class="rc-head"><div class="dot"></div><div class="lbl">人格维度</div></div>
+      <div class="dims-g">
+        <div class="dim-row" id="d-ei"><div class="dim-l">E</div><div class="dim-track"><div class="dim-fill" id="b-ei" style="width:0%"></div></div><div class="dim-r">I</div></div>
+        <div class="dim-row" id="d-sn"><div class="dim-l">S</div><div class="dim-track"><div class="dim-fill" id="b-sn" style="width:0%"></div></div><div class="dim-r">N</div></div>
+        <div class="dim-row" id="d-tf"><div class="dim-l">T</div><div class="dim-track"><div class="dim-fill" id="b-tf" style="width:0%"></div></div><div class="dim-r">F</div></div>
+        <div class="dim-row" id="d-jp"><div class="dim-l">J</div><div class="dim-track"><div class="dim-fill" id="b-jp" style="width:0%"></div></div><div class="dim-r">P</div></div>
+      </div>
+    </div>
+    <div class="rc">
+      <div class="rc-head"><div class="dot"></div><div class="lbl">与主子的相处公式</div></div>
+      <div class="compat-txt"><div class="compat-tag" id="r-ctag"></div><div id="r-compat"></div></div>
+    </div>
+    <button class="btn-w" onclick="shareResult()">分享给铲屎官朋友</button>
+    <button class="btn-g" onclick="restartQuiz()">重新测一次</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// FULL-BODY SCENE RENDERER
+// ============================================================
+function makeScene(c) {
+  const { bg='#050505', fur='#C8A882', fd='#907060', gc='#0099ff',
+          ear='cat', eye='dot', scene='stand', extras=[] } = c;
+  const p = [];
+
+  // Helper: draw head (portrait-style, reused from makeSVG but smaller)
+  function head(cx, cy, sc, eyeStyle, mouthStyle, browStyle) {
+    const hrx = 28*sc, hry = 24*sc;
+    const eyLx=cx-10*sc, eyRx=cx+10*sc, eyY=cy-4*sc;
+    const nY=cy+6*sc, mY=nY+5*sc;
+    const bY=eyY-7*sc;
+    const h=[];
+
+    // ears
+    if (ear==='cat') {
+      const lx=cx-hrx+5*sc, rx=cx+hrx-5*sc, ty=cy-hry+4*sc;
+      h.push(`<polygon points="${lx},${ty+7*sc} ${lx-7*sc},${ty-12*sc} ${lx+14*sc},${ty+1*sc}" fill="${fur}"/>`);
+      h.push(`<polygon points="${rx},${ty+7*sc} ${rx+7*sc},${ty-12*sc} ${rx-14*sc},${ty+1*sc}" fill="${fur}"/>`);
+      h.push(`<polygon points="${lx+1},${ty+5*sc} ${lx-4*sc},${ty-5*sc} ${lx+10*sc},${ty}" fill="${fd}" opacity=".4"/>`);
+      h.push(`<polygon points="${rx-1},${ty+5*sc} ${rx+4*sc},${ty-5*sc} ${rx-10*sc},${ty}" fill="${fd}" opacity=".4"/>`);
+    } else {
+      h.push(`<ellipse cx="${cx-hrx+1*sc}" cy="${cy-hry+10*sc}" rx="${9*sc}" ry="${15*sc}" fill="${fur}" transform="rotate(-18,${cx-hrx+1*sc},${cy-hry+10*sc})"/>`);
+      h.push(`<ellipse cx="${cx+hrx-1*sc}" cy="${cy-hry+10*sc}" rx="${9*sc}" ry="${15*sc}" fill="${fur}" transform="rotate(18,${cx+hrx-1*sc},${cy-hry+10*sc})"/>`);
+    }
+    // head
+    h.push(`<ellipse cx="${cx}" cy="${cy}" rx="${hrx}" ry="${hry}" fill="${fur}"/>`);
+    // blush
+    h.push(`<ellipse cx="${cx-hrx+9*sc}" cy="${cy+6*sc}" rx="${6*sc}" ry="${3*sc}" fill="rgba(220,120,90,.22)"/>`);
+    h.push(`<ellipse cx="${cx+hrx-9*sc}" cy="${cy+6*sc}" rx="${6*sc}" ry="${3*sc}" fill="rgba(220,120,90,.22)"/>`);
+    // eyes
+    function ey(ex,ey2,s){
+      const r=5*sc,r2=3*sc,r3=1.5*sc;
+      switch(s){
+        case 'dot':    return `<circle cx="${ex}" cy="${ey2}" r="${r}" fill="#fff"/><circle cx="${ex}" cy="${ey2+0.5*sc}" r="${r2}" fill="#1a0800"/><circle cx="${ex+1.2*sc}" cy="${ey2-1.2*sc}" r="${r3}" fill="#fff"/>`;
+        case 'wide':   return `<circle cx="${ex}" cy="${ey2}" r="${6*sc}" fill="#fff"/><circle cx="${ex}" cy="${ey2+0.5*sc}" r="${4*sc}" fill="#1a0800"/><circle cx="${ex+1.5*sc}" cy="${ey2-1.5*sc}" r="${1.5*sc}" fill="#fff"/>`;
+        case 'heart':  return `<text x="${ex}" y="${ey2+3*sc}" text-anchor="middle" font-size="${10*sc}" fill="#FF4466">♥</text>`;
+        case 'star':   return `<text x="${ex}" y="${ey2+3*sc}" text-anchor="middle" font-size="${10*sc}" fill="#FFD700">★</text>`;
+        case 'glow':   return `<circle cx="${ex}" cy="${ey2}" r="${6*sc}" fill="${gc}" opacity=".18"/><circle cx="${ex}" cy="${ey2}" r="${r2}" fill="${gc}" opacity=".85"/><circle cx="${ex+1.2*sc}" cy="${ey2-1.2*sc}" r="${r3}" fill="#fff" opacity=".9"/>`;
+        case 'half':   return `<path d="M${ex-5*sc} ${ey2} A ${5*sc} ${5*sc} 0 0 1 ${ex+5*sc} ${ey2}" fill="#fff"/><path d="M${ex-3.5*sc} ${ey2} A ${3.5*sc} ${3.5*sc} 0 0 1 ${ex+3.5*sc} ${ey2}" fill="#1a0800"/>`;
+        case 'hollow': return `<circle cx="${ex}" cy="${ey2}" r="${r}" fill="none" stroke="rgba(180,180,180,.5)" stroke-width="${1.5*sc}"/>`;
+        case 'sparkle':return `<circle cx="${ex}" cy="${ey2}" r="${r}" fill="#fff"/><circle cx="${ex}" cy="${ey2+0.5*sc}" r="${r2}" fill="${gc}"/><circle cx="${ex+1.2*sc}" cy="${ey2-1.2*sc}" r="${r3}" fill="#fff"/>`;
+        case 'smug':   return `<path d="M${ex-5*sc} ${ey2+2*sc} A ${5*sc} ${4*sc} 0 0 1 ${ex+5*sc} ${ey2+2*sc}" fill="#fff"/><path d="M${ex-3*sc} ${ey2+3*sc} A ${3*sc} ${3*sc} 0 0 1 ${ex+3*sc} ${ey2+3*sc}" fill="#1a0800"/>`;
+        case 'x':      return `<line x1="${ex-4*sc}" y1="${ey2-4*sc}" x2="${ex+4*sc}" y2="${ey2+4*sc}" stroke="#666" stroke-width="${2*sc}" stroke-linecap="round"/><line x1="${ex+4*sc}" y1="${ey2-4*sc}" x2="${ex-4*sc}" y2="${ey2+4*sc}" stroke="#666" stroke-width="${2*sc}" stroke-linecap="round"/>`;
+        default:       return `<circle cx="${ex}" cy="${ey2}" r="${r}" fill="#fff"/><circle cx="${ex}" cy="${ey2+0.5*sc}" r="${r2}" fill="#1a0800"/>`;
+      }
+    }
+    h.push(ey(eyLx, eyY, eyeStyle));
+    h.push(ey(eyRx, eyY, eyeStyle));
+    // brow
+    if (browStyle==='angry') h.push(`<line x1="${eyLx-5*sc}" y1="${bY+2*sc}" x2="${eyLx+5*sc}" y2="${bY}" stroke="${fd}" stroke-width="${2*sc}" stroke-linecap="round"/><line x1="${eyRx-5*sc}" y1="${bY}" x2="${eyRx+5*sc}" y2="${bY+2*sc}" stroke="${fd}" stroke-width="${2*sc}" stroke-linecap="round"/>`);
+    if (browStyle==='worried') h.push(`<line x1="${eyLx-5*sc}" y1="${bY}" x2="${eyLx+5*sc}" y2="${bY+2*sc}" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/><line x1="${eyRx-5*sc}" y1="${bY+2*sc}" x2="${eyRx+5*sc}" y2="${bY}" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    if (browStyle==='sad') h.push(`<path d="M${eyLx-4*sc},${bY+2*sc} Q${eyLx},${bY-3*sc} ${eyLx+4*sc},${bY+2*sc}" fill="none" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/><path d="M${eyRx-4*sc},${bY+2*sc} Q${eyRx},${bY-3*sc} ${eyRx+4*sc},${bY+2*sc}" fill="none" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    if (browStyle==='raised-one') h.push(`<line x1="${eyLx-4*sc}" y1="${bY+1*sc}" x2="${eyLx+4*sc}" y2="${bY+1*sc}" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/><path d="M${eyRx-4*sc},${bY-3*sc} Q${eyRx},${bY-6*sc} ${eyRx+4*sc},${bY-3*sc}" fill="none" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    // nose
+    h.push(`<ellipse cx="${cx}" cy="${nY}" rx="${2.5*sc}" ry="${1.8*sc}" fill="${fd}"/>`);
+    // mouth
+    if (mouthStyle==='smile')  h.push(`<path d="M${cx-6*sc} ${mY} Q${cx} ${mY+5*sc} ${cx+6*sc} ${mY}" fill="none" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    if (mouthStyle==='flat')   h.push(`<line x1="${cx-5*sc}" y1="${mY}" x2="${cx+5*sc}" y2="${mY}" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    if (mouthStyle==='open')   h.push(`<path d="M${cx-6*sc} ${mY} Q${cx} ${mY+7*sc} ${cx+6*sc} ${mY}" fill="#5a2020"/>`);
+    if (mouthStyle==='tongue') h.push(`<path d="M${cx-5*sc} ${mY} Q${cx} ${mY+4*sc} ${cx+5*sc} ${mY}" fill="none" stroke="${fd}" stroke-width="${1.2*sc}" stroke-linecap="round"/><ellipse cx="${cx}" cy="${mY+7*sc}" rx="${4*sc}" ry="${5*sc}" fill="#FF8099"/>`);
+    if (mouthStyle==='sad')    h.push(`<path d="M${cx-6*sc} ${mY+4*sc} Q${cx} ${mY} ${cx+6*sc} ${mY+4*sc}" fill="none" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    if (mouthStyle==='grr')    h.push(`<path d="M${cx-7*sc} ${mY} L${cx-7*sc} ${mY+4*sc} L${cx-3*sc} ${mY+2*sc} L${cx} ${mY+5*sc} L${cx+3*sc} ${mY+2*sc} L${cx+7*sc} ${mY+4*sc} L${cx+7*sc} ${mY}" fill="#5a2020"/>`);
+    if (mouthStyle==='smirk')  h.push(`<path d="M${cx-3*sc} ${mY+2*sc} Q${cx+3*sc} ${mY+4*sc} ${cx+6*sc} ${mY}" fill="none" stroke="${fd}" stroke-width="${1.5*sc}" stroke-linecap="round"/>`);
+    // whiskers
+    h.push(`<line x1="${cx-hrx+3*sc}" y1="${nY}" x2="${cx-11*sc}" y2="${nY+1*sc}" stroke="rgba(200,180,150,.3)" stroke-width=".8"/><line x1="${cx-hrx+3*sc}" y1="${nY+3*sc}" x2="${cx-11*sc}" y2="${nY+3*sc}" stroke="rgba(200,180,150,.3)" stroke-width=".8"/><line x1="${cx+hrx-3*sc}" y1="${nY}" x2="${cx+11*sc}" y2="${nY+1*sc}" stroke="rgba(200,180,150,.3)" stroke-width=".8"/><line x1="${cx+hrx-3*sc}" y1="${nY+3*sc}" x2="${cx+11*sc}" y2="${nY+3*sc}" stroke="rgba(200,180,150,.3)" stroke-width=".8"/>`);
+    return h.join('');
+  }
+
+  // SCENE BACKGROUNDS & PROPS + BODY POSES
+  p.push(`<rect width="200" height="220" fill="${bg}"/>`);
+
+  // Ambient glow
+  p.push(`<radialGradient id="ag" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="${gc}" stop-opacity=".08"/><stop offset="100%" stop-color="${gc}" stop-opacity="0"/></radialGradient><rect width="200" height="220" fill="url(#ag)"/>`);
+
+  // Draw body cat/dog shape helper
+  function body_sit(bx, by, flip=false) {
+    const f = flip ? -1 : 1;
+    const tx = flip ? `transform="scale(-1,1) translate(-200,0)"` : '';
+    // body
+    p.push(`<g ${tx}>`);
+    p.push(`<ellipse cx="${bx}" cy="${by}" rx="28" ry="36" fill="${fur}"/>`);
+    // front legs
+    p.push(`<ellipse cx="${bx-14}" cy="${by+32}" rx="9" ry="14" fill="${fur}"/>`);
+    p.push(`<ellipse cx="${bx+14}" cy="${by+32}" rx="9" ry="14" fill="${fur}"/>`);
+    // paws
+    p.push(`<ellipse cx="${bx-14}" cy="${by+44}" rx="10" ry="6" fill="${fd}" opacity=".6"/>`);
+    p.push(`<ellipse cx="${bx+14}" cy="${by+44}" rx="10" ry="6" fill="${fd}" opacity=".6"/>`);
+    // tail
+    p.push(`<path d="M${bx+26},${by+20} Q${bx+55},${by-10} ${bx+42},${by-40}" fill="none" stroke="${fur}" stroke-width="10" stroke-linecap="round"/>`);
+    p.push(`</g>`);
+  }
+  function body_lie(bx, by) {
+    // horizontal body
+    p.push(`<ellipse cx="${bx}" cy="${by}" rx="52" ry="22" fill="${fur}"/>`);
+    // front legs fold
+    p.push(`<ellipse cx="${bx-30}" cy="${by+16}" rx="12" ry="8" fill="${fur}" transform="rotate(-20,${bx-30},${by+16})"/>`);
+    p.push(`<ellipse cx="${bx+8}" cy="${by+20}" rx="12" ry="8" fill="${fur}" transform="rotate(10,${bx+8},${by+20})"/>`);
+    // tail
+    p.push(`<path d="M${bx+48},${by-8} Q${bx+72},${by-30} ${bx+58},${by-50}" fill="none" stroke="${fur}" stroke-width="10" stroke-linecap="round"/>`);
+  }
+  function body_walk(bx, by, dir=1) {
+    // walking — body tilted
+    const tx = dir<0 ? `transform="scale(-1,1) translate(-200,0)"` : '';
+    p.push(`<g ${tx}>`);
+    // body
+    p.push(`<ellipse cx="${bx}" cy="${by}" rx="32" ry="26" fill="${fur}" transform="rotate(-8,${bx},${by})"/>`);
+    // front leg forward
+    p.push(`<ellipse cx="${bx+16}" cy="${by+34}" rx="8" ry="16" fill="${fur}" transform="rotate(-20,${bx+16},${by+34})"/>`);
+    // front leg back
+    p.push(`<ellipse cx="${bx-12}" cy="${by+30}" rx="8" ry="14" fill="${fur}" transform="rotate(10,${bx-12},${by+30})"/>`);
+    // back leg forward
+    p.push(`<ellipse cx="${bx-22}" cy="${by+26}" rx="8" ry="14" fill="${fur}" transform="rotate(-10,${bx-22},${by+26})"/>`);
+    // tail up
+    p.push(`<path d="M${bx+28},${by-10} Q${bx+52},${by-40} ${bx+38},${by-62}" fill="none" stroke="${fur}" stroke-width="10" stroke-linecap="round"/>`);
+    p.push(`</g>`);
+  }
+  function body_melt(bx, by) {
+    // melted blob
+    p.push(`<ellipse cx="${bx}" cy="${by+14}" rx="58" ry="22" fill="${fur}" opacity=".5"/>`);
+    p.push(`<ellipse cx="${bx}" cy="${by}" rx="42" ry="30" fill="${fur}"/>`);
+    // tiny nub legs
+    p.push(`<ellipse cx="${bx-20}" cy="${by+24}" rx="10" ry="7" fill="${fd}" opacity=".5"/>`);
+    p.push(`<ellipse cx="${bx+20}" cy="${by+24}" rx="10" ry="7" fill="${fd}" opacity=".5"/>`);
+    // tail droops
+    p.push(`<path d="M${bx+40},${by+8} Q${bx+58},${by+24} ${bx+46},${by+36}" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>`);
+  }
+  function body_jump(bx, by) {
+    const tx='';
+    p.push(`<g ${tx}>`);
+    p.push(`<ellipse cx="${bx}" cy="${by}" rx="26" ry="22" fill="${fur}" transform="rotate(-15,${bx},${by})"/>`);
+    // front legs stretched up-forward
+    p.push(`<ellipse cx="${bx+22}" cy="${by-18}" rx="8" ry="16" fill="${fur}" transform="rotate(-50,${bx+22},${by-18})"/>`);
+    p.push(`<ellipse cx="${bx+6}" cy="${by-22}" rx="8" ry="14" fill="${fur}" transform="rotate(-70,${bx+6},${by-22})"/>`);
+    // back legs stretched back-down
+    p.push(`<ellipse cx="${bx-20}" cy="${by+22}" rx="8" ry="16" fill="${fur}" transform="rotate(30,${bx-20},${by+22})"/>`);
+    p.push(`<ellipse cx="${bx-8}" cy="${by+28}" rx="8" ry="14" fill="${fur}" transform="rotate(50,${bx-8},${by+28})"/>`);
+    // tail whip
+    p.push(`<path d="M${bx+22},${by+14} Q${bx+54},${by+20} ${bx+48},${by-8}" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>`);
+    p.push(`</g>`);
+  }
+  function body_crouch(bx, by) {
+    // crouching low
+    p.push(`<ellipse cx="${bx}" cy="${by+8}" rx="36" ry="18" fill="${fur}"/>`);
+    p.push(`<ellipse cx="${bx-18}" cy="${by+22}" rx="9" ry="10" fill="${fur}"/>`);
+    p.push(`<ellipse cx="${bx+18}" cy="${by+22}" rx="9" ry="10" fill="${fur}"/>`);
+    p.push(`<path d="M${bx+34},${by+14} Q${bx+58},${by+8} ${bx+50},${by-14}" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>`);
+  }
+
+  // ---- SCENE COMPOSITIONS ----
+  switch(scene) {
+
+    case 'throne': { // ESTJ — sitting upright on throne/podium, facing front
+      // podium
+      p.push(`<rect x="62" y="148" width="76" height="40" rx="4" fill="rgba(255,215,0,.12)" stroke="rgba(255,215,0,.3)" stroke-width="1"/>`);
+      p.push(`<rect x="70" y="142" width="60" height="12" rx="3" fill="rgba(255,215,0,.2)"/>`);
+      body_sit(100, 118);
+      p.push(head(100, 74, 1, 'dot', 'flat', 'angry'));
+      // crown
+      p.push(`<polygon points="78,50 78,38 86,44 100,36 114,44 122,38 122,50" fill="#FFD700"/>`);
+      p.push(`<circle cx="88" cy="43" r="2.5" fill="#FF4444"/><circle cx="100" cy="40" r="2.5" fill="#44FFAA"/><circle cx="112" cy="43" r="2.5" fill="#4488FF"/>`);
+      // tie
+      p.push(`<polygon points="95,104 105,104 108,118 100,124 92,118" fill="#FFD700"/><rect x="94" y="104" width="12" height="5" rx="1" fill="#FFD700" opacity=".8"/>`);
+      break;
+    }
+
+    case 'greeter': { // ESFJ — running toward viewer, arms wide
+      // hearts floating
+      p.push(`<text x="30" y="60" font-size="14" fill="#FF4466" opacity=".7">♥</text><text x="158" y="50" font-size="10" fill="#FF4466" opacity=".55">♥</text><text x="22" y="160" font-size="12" fill="#FF4466" opacity=".5">♥</text><text x="165" y="140" font-size="16" fill="#FF4466" opacity=".65">♥</text>`);
+      body_walk(100, 140, 1);
+      p.push(head(100, 90, 1, 'heart', 'smile', 'none'));
+      break;
+    }
+
+    case 'stage': { // ENFJ — on spotlight stage, gazing up dramatically
+      p.push(`<polygon points="100,0 28,220 172,220" fill="rgba(255,220,80,.04)"/>`);
+      p.push(`<ellipse cx="100" cy="210" rx="60" ry="12" fill="rgba(255,220,80,.08)"/>`);
+      body_sit(100, 148);
+      p.push(head(100, 100, 1, 'sparkle', 'open', 'surprised'));
+      // sparkles
+      p.push(`<text x="22" y="88" font-size="13" fill="#FFD700" opacity=".8">✦</text><text x="168" y="72" font-size="10" fill="#FFD700" opacity=".6">✦</text>`);
+      break;
+    }
+
+    case 'charge': { // ENTJ — charging forward low and fast
+      // motion lines
+      p.push(`<line x1="8" y1="110" x2="55" y2="120" stroke="rgba(255,136,0,.2)" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="130" x2="48" y2="138" stroke="rgba(255,136,0,.15)" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="150" x2="52" y2="152" stroke="rgba(255,136,0,.15)" stroke-width="1.5" stroke-linecap="round"/>`);
+      body_crouch(108, 148);
+      p.push(head(108, 102, 1, 'wide', 'grr', 'angry'));
+      // hardhat
+      p.push(`<ellipse cx="108" cy="76" rx="26" ry="7" fill="#FF8800"/><path d="M82,76 Q108,52 134,76" fill="#FF8800"/><rect x="86" y="72" width="44" height="7" rx="2" fill="#CC6600"/>`);
+      break;
+    }
+
+    case 'patrol': { // ISTJ — walking right, alert posture
+      // window frame bars (observation)
+      p.push(`<rect x="8" y="20" width="42" height="80" rx="4" fill="rgba(25,18,12,.8)"/><line x1="8" y1="60" x2="50" y2="60" stroke="rgba(90,65,40,.5)" stroke-width="1.5"/>`);
+      p.push(`<rect x="150" y="20" width="42" height="80" rx="4" fill="rgba(25,18,12,.8)"/><line x1="150" y1="60" x2="192" y2="60" stroke="rgba(90,65,40,.5)" stroke-width="1.5"/>`);
+      body_walk(100, 148, 1);
+      p.push(head(100, 96, 1, 'dot', 'flat', 'flat'));
+      // badge
+      p.push(`<rect x="82" y="106" width="20" height="15" rx="2" fill="#1a3a6a"/><rect x="84" y="107" width="16" height="11" rx="1" fill="#2a5aaa"/><text x="92" y="116" text-anchor="middle" font-size="5" fill="#fff" font-weight="bold">保安</text>`);
+      break;
+    }
+
+    case 'hug_pose': { // ISFJ — sitting, looking up adoringly
+      // hearts
+      p.push(`<text x="32" y="72" font-size="12" fill="#FF6688" opacity=".6">♥</text><text x="154" y="80" font-size="16" fill="#FF6688" opacity=".7">♥</text>`);
+      body_sit(100, 140);
+      p.push(head(100, 92, 1, 'heart', 'smile', 'worried'));
+      break;
+    }
+
+    case 'void_gaze': { // INFJ — sitting, facing slightly left, aura glow
+      p.push(`<ellipse cx="100" cy="120" rx="70" ry="66" fill="${gc}" opacity=".04"/><ellipse cx="100" cy="120" rx="50" ry="48" fill="${gc}" opacity=".04"/>`);
+      // "ghost wisps" — they're looking at something off-screen
+      p.push(`<path d="M28,50 Q40,34 36,20" fill="none" stroke="rgba(170,102,255,.2)" stroke-width="1.5"/><path d="M168,44 Q162,28 170,16" fill="none" stroke="rgba(170,102,255,.15)" stroke-width="1.5"/>`);
+      body_sit(100, 140);
+      p.push(head(100, 92, 1, 'glow', 'flat', 'none'));
+      break;
+    }
+
+    case 'shadow': { // INTJ — crouching in shadow, only glow eyes visible briefly
+      // dark side panels
+      p.push(`<rect x="0" y="0" width="62" height="220" fill="rgba(2,2,2,.85)"/><rect x="138" y="0" width="62" height="220" fill="rgba(2,2,2,.85)"/>`);
+      body_crouch(100, 152);
+      p.push(head(100, 104, 1, 'glow', 'flat', 'none'));
+      break;
+    }
+
+    case 'leap': { // ESTP — mid-air leap, wild expression
+      p.push(`<text x="18" y="78" font-size="15" opacity=".4">💥</text><text x="155" y="65" font-size="12" opacity=".35">⚡</text>`);
+      // shadow on ground
+      p.push(`<ellipse cx="100" cy="208" rx="30" ry="7" fill="rgba(0,0,0,.5)"/>`);
+      body_jump(100, 128);
+      p.push(head(100, 82, 1.05, 'wide', 'tongue', 'raised-one'));
+      break;
+    }
+
+    case 'perform': { // ESFP — standing tall with jazz-hands pose
+      p.push(`<polygon points="100,0 30,220 170,220" fill="rgba(255,220,80,.04)"/>`);
+      p.push(`<text x="24" y="80" font-size="13" fill="#FFD700" opacity=".8">✦</text><text x="166" y="68" font-size="10" fill="#FFD700" opacity=".6">✦</text><text x="30" y="170" font-size="11" fill="#FFD700" opacity=".5">✦</text><text x="160" y="162" font-size="14" fill="#FFD700" opacity=".65">✦</text>`);
+      body_sit(100, 140);
+      p.push(head(100, 90, 1, 'star', 'open', 'surprised'));
+      break;
+    }
+
+    case 'bounce': { // ENFP — jumping with chaos energy
+      p.push(`<text x="16" y="60" font-size="15" opacity=".4">💥</text><text x="160" y="50" font-size="11" opacity=".3">⚡</text>`);
+      p.push(`<text x="24" y="82" font-size="13" fill="#44FFAA" opacity=".7">✦</text><text x="160" y="72" font-size="10" fill="#44FFAA" opacity=".55">✦</text>`);
+      p.push(`<ellipse cx="100" cy="208" rx="28" ry="6" fill="rgba(0,0,0,.4)"/>`);
+      body_jump(100, 130);
+      p.push(head(100, 84, 1.05, 'sparkle', 'open', 'raised-one'));
+      break;
+    }
+
+    case 'smug_sit': { // ENTP — sitting sideways, looking smug at viewer
+      body_sit(100, 140);
+      p.push(head(100, 92, 1, 'smug', 'smirk', 'raised-one'));
+      // sweat drop on opponent side
+      p.push(`<path d="M155,84 Q162,72 158,62" fill="none" stroke="#88CCFF" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="158" cy="60" rx="3.5" ry="5" fill="#88CCFF" opacity=".55"/>`);
+      break;
+    }
+
+    case 'tinker': { // ISTP — crouching, examining something on ground
+      // "object" being studied
+      p.push(`<rect x="78" y="178" width="44" height="22" rx="5" fill="rgba(68,170,255,.12)" stroke="rgba(68,170,255,.3)" stroke-width="1"/>`);
+      p.push(`<line x1="86" y1="189" x2="114" y2="189" stroke="rgba(68,170,255,.4)" stroke-width="1"/><circle cx="100" cy="189" r="3" fill="rgba(68,170,255,.6)"/>`);
+      body_crouch(100, 154);
+      p.push(head(100, 108, 1, 'dot', 'flat', 'flat'));
+      // goggles
+      p.push(`<rect x="82" y="96" width="15" height="11" rx="4" fill="#222" stroke="#555" stroke-width="1"/><rect x="103" y="96" width="15" height="11" rx="4" fill="#222" stroke="#555" stroke-width="1"/><rect x="97" y="99" width="6" height="3" rx="1.5" fill="#444"/><ellipse cx="90" cy="102" rx="5" ry="4" fill="#4488FF" opacity=".45"/><ellipse cx="110" cy="102" rx="5" ry="4" fill="#4488FF" opacity=".45"/>`);
+      break;
+    }
+
+    case 'puddle': { // ISFP — melted on floor, lying flat
+      // floor sheen
+      p.push(`<ellipse cx="100" cy="190" rx="72" ry="16" fill="${fur}" opacity=".2"/>`);
+      body_melt(100, 162);
+      p.push(head(100, 126, 1, 'half', 'flat', 'none'));
+      // zzz
+      p.push(`<text x="136" y="106" font-size="10" fill="${gc}" opacity=".65" font-weight="bold">z</text><text x="148" y="92" font-size="14" fill="${gc}" opacity=".45" font-weight="bold">z</text><text x="160" y="76" font-size="18" fill="${gc}" opacity=".3" font-weight="bold">z</text>`);
+      break;
+    }
+
+    case 'curl': { // INFP — curled up small, looking fragile
+      // soft glow aura
+      p.push(`<ellipse cx="100" cy="160" rx="56" ry="40" fill="${gc}" opacity=".04"/>`);
+      // curled body
+      p.push(`<ellipse cx="100" cy="168" rx="48" ry="28" fill="${fur}" opacity=".6"/>`);
+      p.push(`<ellipse cx="100" cy="158" rx="36" ry="24" fill="${fur}"/>`);
+      p.push(`<path d="M140,164 Q162,148 150,128" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>`);
+      p.push(head(100, 122, 0.88, 'wide', 'sad', 'sad'));
+      // tears
+      p.push(`<path d="M83,130 Q81,140 79,147" fill="none" stroke="#88CCFF" stroke-width="2" stroke-linecap="round"/><ellipse cx="79" cy="149" rx="3" ry="4.5" fill="#88CCFF" opacity=".65"/>`);
+      break;
+    }
+
+    case 'stare': { // INTP — sitting, staring blankly into void
+      // wall panels
+      p.push(`<rect x="0" y="0" width="40" height="220" fill="rgba(25,18,12,.75)"/><rect x="160" y="0" width="40" height="220" fill="rgba(25,18,12,.75)"/><line x1="40" y1="0" x2="40" y2="220" stroke="rgba(90,65,40,.5)" stroke-width="1.5"/><line x1="160" y1="0" x2="160" y2="220" stroke="rgba(90,65,40,.5)" stroke-width="1.5"/>`);
+      body_sit(100, 142);
+      p.push(head(100, 94, 1, 'hollow', 'flat', 'none'));
+      // zzz
+      p.push(`<text x="130" y="74" font-size="10" fill="${gc}" opacity=".65" font-weight="bold">z</text><text x="144" y="60" font-size="14" fill="${gc}" opacity=".45" font-weight="bold">z</text>`);
+      break;
+    }
+
+    default: { // fallback sit
+      body_sit(100, 140);
+      p.push(head(100, 92, 1, eye, 'smile', 'none'));
+    }
+  }
+
+  return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">${p.join('')}</svg>`;
+}
+
+// ============================================================
+// SVG AVATAR GENERATOR
+// ============================================================
+function makeSVG(c) {
+  // If scene mode, delegate to scene renderer
+  if (c.scene) return makeScene(c);
+
+  const {
+    bg='#050505', fur='#C8A882', fd='#907060',
+    ear='cat', eye='dot', eyeR=null,
+    brow='flat', mouth='smile',
+    acc='none', extras=[], gc='#0099ff',
+    pose='normal'
+  } = c;
+
+  // Head geometry based on pose
+  let hx=100, hy=128, hrx=58, hry=52;
+  if (pose==='melted') { hrx=72; hry=36; hy=150; }
+  if (pose==='small')  { hrx=40; hry=36; hy=148; hx=100; }
+
+  const eyLx=hx-22, eyRx=hx+22, eyY=hy-10;
+  const nY=hy+12, mY=nY+10;
+  const p=[];
+
+  // BG
+  p.push(`<rect width="200" height="220" fill="${bg}"/>`);
+
+  // Background extras
+  if (extras.includes('spotlight')) p.push(`<polygon points="100,0 30,220 170,220" fill="rgba(255,220,80,.05)"/>`);
+  if (extras.includes('bars'))      p.push(`<rect x="12" y="18" width="176" height="148" rx="8" fill="none" stroke="rgba(120,90,60,.35)" stroke-width="3"/><line x1="68" y1="18" x2="68" y2="166" stroke="rgba(120,90,60,.35)" stroke-width="3"/><line x1="132" y1="18" x2="132" y2="166" stroke="rgba(120,90,60,.35)" stroke-width="3"/>`);
+
+  // Aura
+  if (extras.includes('aura')) p.push(`<ellipse cx="${hx}" cy="${hy}" rx="72" ry="68" fill="${gc}" opacity=".06"/><ellipse cx="${hx}" cy="${hy}" rx="55" ry="52" fill="${gc}" opacity=".06"/>`);
+
+  // EARS
+  if (ear==='cat') {
+    const lx=hx-hrx+10, rx=hx+hrx-10, ty=hy-hry+8;
+    p.push(`<polygon points="${lx},${ty+14} ${lx-14},${ty-26} ${lx+30},${ty+2}" fill="${fur}"/>`);
+    p.push(`<polygon points="${rx},${ty+14} ${rx+14},${ty-26} ${rx-30},${ty+2}" fill="${fur}"/>`);
+    p.push(`<polygon points="${lx+1},${ty+10} ${lx-8},${ty-14} ${lx+22},${ty+1}" fill="${fd}" opacity=".4"/>`);
+    p.push(`<polygon points="${rx-1},${ty+10} ${rx+8},${ty-14} ${rx-22},${ty+1}" fill="${fd}" opacity=".4"/>`);
+  } else {
+    const ey2=hy-hry+18;
+    p.push(`<ellipse cx="${hx-hrx+2}" cy="${ey2+22}" rx="18" ry="30" fill="${fur}" transform="rotate(-18,${hx-hrx+2},${ey2+22})"/>`);
+    p.push(`<ellipse cx="${hx+hrx-2}" cy="${ey2+22}" rx="18" ry="30" fill="${fur}" transform="rotate(18,${hx+hrx-2},${ey2+22})"/>`);
+  }
+
+  // HEAD
+  p.push(`<ellipse cx="${hx}" cy="${hy}" rx="${hrx}" ry="${hry}" fill="${fur}"/>`);
+
+  // Blush
+  if (!extras.includes('aura') && pose!=='small') {
+    p.push(`<ellipse cx="${hx-hrx+20}" cy="${hy+12}" rx="13" ry="7" fill="rgba(220,120,90,.22)"/>`);
+    p.push(`<ellipse cx="${hx+hrx-20}" cy="${hy+12}" rx="13" ry="7" fill="rgba(220,120,90,.22)"/>`);
+  }
+
+  // EYES
+  function eye_(ex, ey, s) {
+    switch(s) {
+      case 'dot':    return `<circle cx="${ex}" cy="${ey}" r="9" fill="#fff"/><circle cx="${ex}" cy="${ey+1}" r="5.5" fill="#1a0800"/><circle cx="${ex+2}" cy="${ey-2}" r="2" fill="#fff"/>`;
+      case 'wide':   return `<circle cx="${ex}" cy="${ey}" r="11" fill="#fff"/><circle cx="${ex}" cy="${ey+1}" r="7" fill="#1a0800"/><circle cx="${ex+3}" cy="${ey-3}" r="2.5" fill="#fff"/>`;
+      case 'heart':  return `<text x="${ex}" y="${ey+6}" text-anchor="middle" font-size="17" fill="#FF4466">♥</text>`;
+      case 'star':   return `<text x="${ex}" y="${ey+6}" text-anchor="middle" font-size="17" fill="#FFD700">★</text>`;
+      case 'x':      return `<line x1="${ex-7}" y1="${ey-7}" x2="${ex+7}" y2="${ey+7}" stroke="#666" stroke-width="3" stroke-linecap="round"/><line x1="${ex+7}" y1="${ey-7}" x2="${ex-7}" y2="${ey+7}" stroke="#666" stroke-width="3" stroke-linecap="round"/>`;
+      case 'half':   return `<path d="M${ex-9} ${ey} A 9 9 0 0 1 ${ex+9} ${ey}" fill="#fff"/><path d="M${ex-6} ${ey} A 6 6 0 0 1 ${ex+6} ${ey}" fill="#1a0800"/>`;
+      case 'hollow': return `<circle cx="${ex}" cy="${ey}" r="9" fill="none" stroke="rgba(180,180,180,.5)" stroke-width="2.5"/>`;
+      case 'glow':   return `<circle cx="${ex}" cy="${ey}" r="11" fill="${gc}" opacity=".18"/><circle cx="${ex}" cy="${ey}" r="6.5" fill="${gc}" opacity=".8"/><circle cx="${ex+2}" cy="${ey-2}" r="2" fill="#fff" opacity=".9"/>`;
+      case 'sparkle':return `<circle cx="${ex}" cy="${ey}" r="9" fill="#fff"/><circle cx="${ex}" cy="${ey+1}" r="5.5" fill="${gc}"/><circle cx="${ex+2}" cy="${ey-2}" r="2" fill="#fff"/><line x1="${ex-14}" y1="${ey}" x2="${ex+14}" y2="${ey}" stroke="${gc}" stroke-width="1.2" opacity=".35"/><line x1="${ex}" y1="${ey-14}" x2="${ex}" y2="${ey+14}" stroke="${gc}" stroke-width="1.2" opacity=".35"/>`;
+      case 'smug':   return `<path d="M${ex-9} ${ey+4} A 9 8 0 0 1 ${ex+9} ${ey+4}" fill="#fff"/><path d="M${ex-6} ${ey+5} A 6 5 0 0 1 ${ex+6} ${ey+5}" fill="#1a0800"/><line x1="${ex-9}" y1="${ey+4}" x2="${ex+9}" y2="${ey+4}" stroke="${fur}" stroke-width="2"/>`;
+      case 'spiral': return `<path d="M${ex},${ey} m-5,0 a5,5,0,1,1,10,0 a3,3,0,1,1,-6,0 a1.5,1.5,0,1,1,3,0" fill="none" stroke="#888" stroke-width="1.5"/>`;
+      default:       return `<circle cx="${ex}" cy="${ey}" r="9" fill="#fff"/><circle cx="${ex}" cy="${ey+1}" r="5.5" fill="#1a0800"/>`;
+    }
+  }
+  p.push(eye_(eyLx, eyY, eye));
+  p.push(eye_(eyRx, eyY, eyeR||eye));
+
+  // BROWS
+  const bY=eyY-14;
+  if (brow==='angry')     p.push(`<line x1="${eyLx-10}" y1="${bY+4}" x2="${eyLx+10}" y2="${bY}" stroke="${fd}" stroke-width="3" stroke-linecap="round"/><line x1="${eyRx-10}" y1="${bY}" x2="${eyRx+10}" y2="${bY+4}" stroke="${fd}" stroke-width="3" stroke-linecap="round"/>`);
+  if (brow==='worried')   p.push(`<line x1="${eyLx-10}" y1="${bY}" x2="${eyLx+10}" y2="${bY+4}" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/><line x1="${eyRx-10}" y1="${bY+4}" x2="${eyRx+10}" y2="${bY}" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (brow==='surprised') p.push(`<path d="M${eyLx-9},${bY-4} Q${eyLx},${bY-10} ${eyLx+9},${bY-4}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/><path d="M${eyRx-9},${bY-4} Q${eyRx},${bY-10} ${eyRx+9},${bY-4}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (brow==='raised-one') p.push(`<line x1="${eyLx-9}" y1="${bY+1}" x2="${eyLx+9}" y2="${bY+1}" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/><path d="M${eyRx-9},${bY-5} Q${eyRx},${bY-10} ${eyRx+9},${bY-5}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (brow==='sad')        p.push(`<path d="M${eyLx-9},${bY+3} Q${eyLx},${bY-4} ${eyLx+9},${bY+3}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/><path d="M${eyRx-9},${bY+3} Q${eyRx},${bY-4} ${eyRx+9},${bY+3}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+
+  // NOSE
+  p.push(`<ellipse cx="${hx}" cy="${nY}" rx="5" ry="3.5" fill="${fd}"/>`);
+
+  // MOUTH
+  if (mouth==='smile')  p.push(`<path d="M${hx-12} ${mY} Q${hx} ${mY+10} ${hx+12} ${mY}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (mouth==='flat')   p.push(`<line x1="${hx-10}" y1="${mY}" x2="${hx+10}" y2="${mY}" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (mouth==='smirk')  p.push(`<path d="M${hx-6} ${mY+2} Q${hx+5} ${mY+7} ${hx+12} ${mY-2}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (mouth==='open')   p.push(`<path d="M${hx-12} ${mY} Q${hx} ${mY+14} ${hx+12} ${mY}" fill="#5a2020"/><path d="M${hx-9} ${mY} Q${hx} ${mY+10} ${hx+9} ${mY}" fill="#7a3030"/>`);
+  if (mouth==='grr')    p.push(`<path d="M${hx-14} ${mY} L${hx-14} ${mY+8} L${hx-6} ${mY+3} L${hx} ${mY+9} L${hx+6} ${mY+3} L${hx+14} ${mY+8} L${hx+14} ${mY}" fill="#5a2020"/>`);
+  if (mouth==='sad')    p.push(`<path d="M${hx-12} ${mY+7} Q${hx} ${mY} ${hx+12} ${mY+7}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (mouth==='pout')   p.push(`<path d="M${hx-8} ${mY+5} Q${hx} ${mY} ${hx+8} ${mY+5}" fill="none" stroke="${fd}" stroke-width="2.5" stroke-linecap="round"/>`);
+  if (mouth==='tongue') p.push(`<path d="M${hx-10} ${mY} Q${hx} ${mY+7} ${hx+10} ${mY}" fill="none" stroke="${fd}" stroke-width="2" stroke-linecap="round"/><ellipse cx="${hx}" cy="${mY+14}" rx="8" ry="10" fill="#FF8099"/><line x1="${hx}" y1="${mY+9}" x2="${hx}" y2="${mY+22}" stroke="#FF6080" stroke-width="1.5" opacity=".6"/>`);
+
+  // WHISKERS
+  if (pose!=='melted') {
+    const wy=nY+2;
+    p.push(`<line x1="${hx-hrx+6}" y1="${wy-3}" x2="${hx-22}" y2="${wy}" stroke="rgba(200,180,150,.35)" stroke-width="1"/><line x1="${hx-hrx+6}" y1="${wy+4}" x2="${hx-22}" y2="${wy+4}" stroke="rgba(200,180,150,.35)" stroke-width="1"/><line x1="${hx+hrx-6}" y1="${wy-3}" x2="${hx+22}" y2="${wy}" stroke="rgba(200,180,150,.35)" stroke-width="1"/><line x1="${hx+hrx-6}" y1="${wy+4}" x2="${hx+22}" y2="${wy+4}" stroke="rgba(200,180,150,.35)" stroke-width="1"/>`);
+  }
+
+  // ACCESSORIES
+  const aY=hy-hry-4;
+  if (acc==='crown') p.push(`<polygon points="${hx-22},${aY+6} ${hx-22},${aY-16} ${hx-10},${aY-6} ${hx},${aY-18} ${hx+10},${aY-6} ${hx+22},${aY-16} ${hx+22},${aY+6}" fill="#FFD700"/><circle cx="${hx-8}" cy="${aY-1}" r="3" fill="#FF4444" opacity=".85"/><circle cx="${hx}" cy="${aY-4}" r="3" fill="#44FFAA" opacity=".85"/><circle cx="${hx+8}" cy="${aY-1}" r="3" fill="#4488FF" opacity=".85"/>`);
+  if (acc==='hardhat') p.push(`<ellipse cx="${hx}" cy="${aY+4}" rx="44" ry="11" fill="#FF8800"/><path d="M${hx-36},${aY+4} Q${hx},${aY-28} ${hx+36},${aY+4}" fill="#FF8800"/><rect x="${hx-22}" y="${aY-2}" width="44" height="9" rx="2" fill="#CC6600"/>`);
+  if (acc==='badge') p.push(`<rect x="${hx-16}" y="${aY+8}" width="32" height="22" rx="3" fill="#1a3a6a"/><rect x="${hx-13}" y="${aY+10}" width="26" height="16" rx="2" fill="#2a5aaa"/><text x="${hx}" y="${aY+22}" text-anchor="middle" font-size="7" fill="#fff" font-weight="bold">保安</text>`);
+  if (acc==='goggles') p.push(`<rect x="${hx-32}" y="${eyY-10}" width="22" height="18" rx="5" fill="#222" stroke="#555" stroke-width="1.5"/><rect x="${hx+10}" y="${eyY-10}" width="22" height="18" rx="5" fill="#222" stroke="#555" stroke-width="1.5"/><rect x="${hx-10}" y="${eyY-2}" width="20" height="4" rx="2" fill="#444"/><ellipse cx="${hx-21}" cy="${eyY-1}" rx="8" ry="6" fill="#4488FF" opacity=".45"/><ellipse cx="${hx+21}" cy="${eyY-1}" rx="8" ry="6" fill="#4488FF" opacity=".45"/>`);
+
+  // EXTRAS ON TOP
+  if (extras.includes('tie')) {
+    const tb=hy+hry-3;
+    p.push(`<polygon points="${hx-5},${tb} ${hx+5},${tb} ${hx+8},${tb+18} ${hx},${tb+28} ${hx-8},${tb+18}" fill="${gc}"/><rect x="${hx-6}" y="${tb}" width="12" height="5" rx="1" fill="${gc}" opacity=".8"/>`);
+  }
+  if (extras.includes('hearts')) p.push(`<text x="25" y="70" font-size="18" fill="#FF4466" opacity=".75">♥</text><text x="163" y="78" font-size="14" fill="#FF4466" opacity=".6">♥</text><text x="38" y="185" font-size="12" fill="#FF4466" opacity=".5">♥</text><text x="155" y="178" font-size="20" fill="#FF4466" opacity=".65">♥</text>`);
+  if (extras.includes('sparkles')) p.push(`<text x="20" y="82" font-size="13" fill="#FFD700" opacity=".8">✦</text><text x="168" y="72" font-size="10" fill="#FFD700" opacity=".6">✦</text><text x="28" y="174" font-size="10" fill="#FFD700" opacity=".5">✦</text><text x="162" y="168" font-size="14" fill="#FFD700" opacity=".65">✦</text>`);
+  if (extras.includes('chaos')) p.push(`<line x1="18" y1="38" x2="48" y2="62" stroke="rgba(255,100,40,.25)" stroke-width="2"/><line x1="182" y1="38" x2="152" y2="62" stroke="rgba(255,100,40,.25)" stroke-width="2"/><line x1="18" y1="185" x2="48" y2="162" stroke="rgba(255,100,40,.25)" stroke-width="2"/><line x1="182" y1="185" x2="152" y2="162" stroke="rgba(255,100,40,.25)" stroke-width="2"/><text x="22" y="52" font-size="15" opacity=".45">💥</text><text x="156" y="52" font-size="12" opacity=".35">⚡</text>`);
+  if (extras.includes('tears')) { const tx2=eyLx; p.push(`<path d="M${tx2},${eyY+9} Q${tx2-2},${eyY+22} ${tx2-4},${eyY+30}" fill="none" stroke="#88CCFF" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="${tx2-4}" cy="${eyY+32}" rx="4" ry="6" fill="#88CCFF" opacity=".65"/>`); }
+  if (extras.includes('sweat')) p.push(`<path d="M${hx+hrx-4},${hy-22} Q${hx+hrx+8},${hy-10} ${hx+hrx+2},${hy}" fill="none" stroke="#88CCFF" stroke-width="2" stroke-linecap="round"/><ellipse cx="${hx+hrx+2}" cy="${hy+2}" rx="4" ry="6" fill="#88CCFF" opacity=".55"/>`);
+  if (extras.includes('zzz')) p.push(`<text x="${hx+hrx-8}" y="${hy-hry+8}" font-size="11" fill="${gc}" opacity=".65" font-weight="bold">z</text><text x="${hx+hrx+4}" y="${hy-hry-6}" font-size="15" fill="${gc}" opacity=".45" font-weight="bold">z</text><text x="${hx+hrx+14}" y="${hy-hry-20}" font-size="19" fill="${gc}" opacity=".3" font-weight="bold">z</text>`);
+  if (extras.includes('puddle')) p.push(`<ellipse cx="${hx}" cy="200" rx="68" ry="14" fill="${fur}" opacity=".35"/>`);
+  if (extras.includes('walls')) p.push(`<rect x="0" y="0" width="42" height="220" fill="rgba(25,18,12,.75)"/><rect x="158" y="0" width="42" height="220" fill="rgba(25,18,12,.75)"/><line x1="42" y1="0" x2="42" y2="220" stroke="rgba(90,65,40,.5)" stroke-width="2"/><line x1="158" y1="0" x2="158" y2="220" stroke="rgba(90,65,40,.5)" stroke-width="2"/>`);
+
+  return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">${p.join('')}</svg>`;
+}
+
+// ============================================================
+// AVATAR CONFIGS per type
+// ============================================================
+const AVATARS = {
+  'ESTJ':{ scene:'throne',  bg:'#060400', fur:'#C4A070',fd:'#8a6040',ear:'cat', eye:'dot',   gc:'#FFD700' },
+  'ESFJ':{ scene:'greeter', bg:'#050002', fur:'#C8B090',fd:'#906840',ear:'dog', eye:'heart', gc:'#FF4466' },
+  'ENFJ':{ scene:'stage',   bg:'#050002', fur:'#D0A0A0',fd:'#906060',ear:'cat', eye:'sparkle',gc:'#FF88CC' },
+  'ENTJ':{ scene:'charge',  bg:'#040200', fur:'#9a8070',fd:'#6a5040',ear:'dog', eye:'wide',  gc:'#FF8800' },
+  'ISTJ':{ scene:'patrol',  bg:'#030303', fur:'#b09878',fd:'#806848',ear:'cat', eye:'dot',   gc:'#0099ff' },
+  'ISFJ':{ scene:'hug_pose',bg:'#050002', fur:'#C8A882',fd:'#a07850',ear:'dog', eye:'heart', gc:'#FF6688' },
+  'INFJ':{ scene:'void_gaze',bg:'#04020a',fur:'#6a5a8a',fd:'#3a2a5a',ear:'cat', eye:'glow',  gc:'#AA66FF' },
+  'INTJ':{ scene:'shadow',  bg:'#020202', fur:'#1e1828',fd:'#0e0810',ear:'cat', eye:'glow',  gc:'#0099ff' },
+  'ESTP':{ scene:'leap',    bg:'#040200', fur:'#C8A060',fd:'#906030',ear:'dog', eye:'wide',  gc:'#FF6600' },
+  'ESFP':{ scene:'perform', bg:'#050300', fur:'#E8B090',fd:'#C07050',ear:'cat', eye:'star',  gc:'#FFD700' },
+  'ENFP':{ scene:'bounce',  bg:'#020604', fur:'#B8A858',fd:'#806025',ear:'cat', eye:'sparkle',gc:'#44FFAA' },
+  'ENTP':{ scene:'smug_sit',bg:'#030305', fur:'#A8A888',fd:'#686848',ear:'cat', eye:'smug',  gc:'#AAAAFF' },
+  'ISTP':{ scene:'tinker',  bg:'#030303', fur:'#9a8a70',fd:'#6a5a40',ear:'cat', eye:'dot',   gc:'#44AAFF' },
+  'ISFP':{ scene:'puddle',  bg:'#030305', fur:'#C8A882',fd:'#a07850',ear:'cat', eye:'half',  gc:'#88AAFF' },
+  'INFP':{ scene:'curl',    bg:'#020305', fur:'#B8C8A0',fd:'#788858',ear:'cat', eye:'wide',  gc:'#88CCFF' },
+  'INTP':{ scene:'stare',   bg:'#030303', fur:'#C0C0B0',fd:'#909080',ear:'cat', eye:'hollow',gc:'#AAAAAA' },
+};
+
+// ============================================================
+// QUIZ DATA
+// ============================================================
+const QS = [
+  {id:'Q1',num:'Q01',dim:'EI',text:'门铃突然响了。TA 的第一反应？',options:[
+    {l:'A',t:'已经在门口候着了，甚至比你先到，叫声能劝退外卖小哥',s:'E'},
+    {l:'B',t:'小跑过来，在门口保持礼貌性警戒距离',s:'E'},
+    {l:'C',t:'抬头确认了一下不是食物相关事件，继续躺',s:'I'},
+    {l:'D',t:'瞬间消失。这个家里从来没有住过它',s:'I'},
+  ]},
+  {id:'Q2',num:'Q02',dim:'TF',text:'你精心设计了一场"哭泣表演"，对着 TA 来了一段，TA 怎么反应？',options:[
+    {l:'A',t:'立刻冲过来又舔又蹭，急成小狗，比你还委屈',s:'F'},
+    {l:'B',t:'慢慢走来，用那双大眼睛一动不动地盯着你',s:'F'},
+    {l:'C',t:'斜眼鉴定了一下，认定你没事，继续舔毛',s:'T'},
+    {l:'D',t:'直接踩着你脸走过去。你的悲伤不在服务范围内',s:'T'},
+  ]},
+  {id:'Q3',num:'Q03',dim:'TF',text:'你正在吃好吃的，故意不分给 TA。TA 的策略是？',options:[
+    {l:'A',t:'眼神攻势全开，把每一口都盯出负罪感',s:'F'},
+    {l:'B',t:'坐在旁边发出细微呜咽，精准打击你的良心',s:'F'},
+    {l:'C',t:'来闻了一下，判定不符合预期，走了',s:'T'},
+    {l:'D',t:'直接上爪。没有谈判，只有行动',s:'T'},
+  ]},
+  {id:'Q4',num:'Q04',dim:'JP',text:'描述一下 TA 的生物钟',options:[
+    {l:'A',t:'比手机闹钟还准。到点不喂，启动全套催饭流程',s:'J'},
+    {l:'B',t:'大体规律，偶尔给你一点人道主义豁免',s:'J'},
+    {l:'C',t:'完全取决于今天的心情和宇宙的状态',s:'P'},
+    {l:'D',t:'凌晨 3 点发癫，下午 2 点睡死。每天都是新谜题',s:'P'},
+  ]},
+  {id:'Q5',num:'Q05',dim:'EI',text:'你下班推开门的那一瞬间',options:[
+    {l:'A',t:'爆炸式迎接，邻居会以为你们在打架',s:'E'},
+    {l:'B',t:'摇着尾巴跑来，热情但保留体面',s:'E'},
+    {l:'C',t:'对视两秒，确认是你，然后继续躺回去',s:'I'},
+    {l:'D',t:'纹丝不动。你是这个家的透明人',s:'I'},
+  ]},
+  {id:'Q6',num:'Q06',dim:'EI',text:'带 TA 去陌生地方（朋友家 / 宠物医院候诊室），TA 的状态？',options:[
+    {l:'A',t:'全场社交，想认识在场每一个生命体',s:'E'},
+    {l:'B',t:'紧张但好奇，慢慢开始自主探索',s:'E'},
+    {l:'C',t:'贴着你不动，对外部世界保持高度审慎',s:'I'},
+    {l:'D',t:'化身石雕，或者想方设法钻进你的包里',s:'I'},
+  ]},
+  {id:'Q7',num:'Q07',dim:'SN',text:'家里出现了一只虫子。TA 怎么处理？',options:[
+    {l:'A',t:'秒速定位，精准狩猎，问题解决，继续生活',s:'N'},
+    {l:'B',t:'蹲下来盯着它研究了很久，再动手',s:'N'},
+    {l:'C',t:'看了一眼，确认不是食物，选择无视',s:'S'},
+    {l:'D',t:'被吓到了。那个东西比它更有气势',s:'S'},
+  ]},
+  {id:'Q8',num:'Q08',dim:'JP',text:'凌晨 2 点，你睡得正香，TA 突然——',options:[
+    {l:'A',t:'在你身上踩钢琴，然后冲出去开始百米冲刺',s:'P'},
+    {l:'B',t:'轻轻走来，蹭了你一下，确认你还活着，趴下',s:'J'},
+    {l:'C',t:'独自开始 party，叼玩具互殴，完全不需要你',s:'P'},
+    {l:'D',t:'没有动静。TA 比你睡得更香',s:'J'},
+  ]},
+  {id:'Q9',num:'Q09',dim:'TF',text:'TA 的固定睡觉位置是？',options:[
+    {l:'A',t:'你的脸 / 脖子 / 胸口。必须贴，否则无法入睡',s:'F'},
+    {l:'B',t:'你身边，不一定碰，但要在同一个宇宙里',s:'F'},
+    {l:'C',t:'有自己固定的窝，独立自主，不叨扰',s:'T'},
+    {l:'D',t:'鞋盒、水缸、浴室地板，今天睡哪不一定',s:'T'},
+  ]},
+  {id:'Q10',num:'Q10',dim:'SN',text:'TA 第一次对着镜子看到自己，反应是？',options:[
+    {l:'A',t:'走过去闻了闻，确认没有气味，不是威胁，走了',s:'S'},
+    {l:'B',t:'全力攻击镜中入侵者，守护领土绝不退让',s:'S'},
+    {l:'C',t:'反复用爪子戳镜面，对比自己的动作，陷入沉思',s:'N'},
+    {l:'D',t:'花了二十分钟试图找到镜子后面的通道',s:'N'},
+  ]},
+  {id:'Q11',num:'Q11',dim:'SN',text:'你直视着 TA，缓缓把桌上的杯子往边缘推……',options:[
+    {l:'A',t:'看都不看。这种低级试探它不屑于回应',s:'S'},
+    {l:'B',t:'冷漠地盯着你，似乎在评估你的智力水平',s:'S'},
+    {l:'C',t:'好奇地走过来，用爪子帮你一起推',s:'N'},
+    {l:'D',t:'比你先一步把杯子拍下去，然后无辜地看着你',s:'N'},
+  ]},
+  {id:'Q12',num:'Q12',dim:'JP',text:'你出差三天刚回来，TA 的反应？',options:[
+    {l:'A',t:'扑上来，叫，蹬，情绪彻底崩了，眼睛都红了',s:'P'},
+    {l:'B',t:'开心地蹭过来，尾巴出卖了它有多想你',s:'J'},
+    {l:'C',t:'淡淡地看了你一眼。哦，回来了',s:'J'},
+    {l:'D',t:'给你一个背影。它决定用冷战惩罚你的离开',s:'P'},
+  ]},
+];
+
+// ============================================================
+// TYPE DATA
+// ============================================================
+const TYPES={
+  'ESTJ':{nickname:'甲方主子 CEO-er',roast:'每天早上 6 点准时开早会（催饭），你的意见不重要，计划表是 TA 定的。你是 TA 的下属，不是主人。',traits:{cling:2,chaos:2,drama:2,social:4,yolo:2,solo:5},tips:['按时喂饭是你唯一的 KPI，迟到一分钟将触发全面绩效考核','不要试图改变 TA 的作息，那是公司规章制度，不是你能改的','接受下属身份，乙方配合甲方，才能维持稳定关系'],compatTag:'甲乙方关系',compat:'TA 发号施令，你老实执行。只要你守规矩、准时喂饭，这段关系出奇地稳定。试图反抗的那天就是你被开除的那天。'},
+  'ESFJ':{nickname:'中央空调 HVAC-er',roast:'对谁都热情，甚至对小偷都摇尾巴。TA 不是爱你，TA 只是单纯地电力过剩。大家的好邻居，主人的边缘人。',traits:{cling:4,chaos:1,drama:3,social:5,yolo:2,solo:2},tips:['来客人时做好介绍工作，TA 需要认识每一位新朋友','不要因为 TA 对外人同样热情而吃醋，这是天性','定期组织"家庭聚会"满足 TA 的社交需求'],compatTag:'社区关系户',compat:'你是 TA 的基本盘，但 TA 的爱不是专属的。学会和邻居、朋友、快递员共享你的主子，这是和平相处的方式。'},
+  'ENFJ':{nickname:'传销头目 MLM-er',roast:'擅长情感绑架。只要你一动身，TA 就用眼神控诉你是抛妻弃子的陈世美。TA 觉得你没有 TA 活不下去。',traits:{cling:5,chaos:1,drama:5,social:4,yolo:1,solo:1},tips:['出门前给 TA 充分的道别仪式，否则你会被情感勒索三天','回家后必须给足 20 分钟高质量陪伴，不然 TA 用眼神让你愧疚一整晚','永远不要在 TA 面前透露"独自生活也挺好"的信号'],compatTag:'情感共生体',compat:'你们的关系本质上是一场持续的情感拉锯战。TA 需要你，TA 也让你需要 TA。你以为你在养宠物，其实你在被管理。'},
+  'ENTJ':{nickname:'拆迁办主任 CRASH-er',roast:'对家里的装修有自己的设计方案（通常是通过啃咬实现）。你不配合，TA 就强拆。自带霸道总裁 BGM。',traits:{cling:2,chaos:5,drama:2,social:3,yolo:3,solo:4},tips:['重要物品请锁柜子，TA 的"设计方案"执行力极强且不分贵贱','提供充足的合法破坏渠道——猫抓板、啃咬玩具、纸箱','不要和 TA 硬刚，TA 永远有备用方案，而你没有'],compatTag:'强强关系',compat:'你们都是有主见的个体，但家里只有一个 CEO 的位置，且那个位置不是你的。学会在 TA 的战略框架内找到你的生态位。'},
+  'ISTJ':{nickname:'保安大爷 GUARD-er',roast:'坐在窗台一上午一动不动，观察外面每一个路人。家里的秩序感是由 TA 的固执撑起的。极其自律，不爱社交。',traits:{cling:1,chaos:1,drama:1,social:1,yolo:1,solo:5},tips:['维持规律的作息，任何变化都会让 TA 产生"安保漏洞"警觉','不要强迫 TA 社交，TA 的职责是观察，不是参与','窗台是 TA 的岗亭，请勿遮挡观察视野'],compatTag:'房东与保安',compat:'你提供住所和食物，TA 提供安全感（单方面的）。这是一段井水不犯河水、分工明确的专业关系。'},
+  'ISFJ':{nickname:'田螺死士 SIMP-er',roast:'卑微的付出型人格。只要你给个眼神，TA 愿意为你去叼那个全是口水的、发臭的球 100 次。你是 TA 世界的唯一光。',traits:{cling:5,chaos:1,drama:2,social:3,yolo:1,solo:1},tips:['定期给予正面反馈，TA 需要确认自己的付出被看见','不要辜负 TA 的信任，TA 把你当作全世界','出门告别、回家问候——这是维持 TA 心理稳定的基本仪式'],compatTag:'绝对忠诚',compat:'TA 是你见过最忠诚的生命体。你的一个眼神对 TA 来说是全部意义。请善待这份纯粹。'},
+  'INFJ':{nickname:'邪教祭司 KUL-er',roast:'经常对着墙角或虚空凝视。你怀疑 TA 正在跟外星人通信，或者在诅咒你的年终奖。内心戏可以拍 50 集连续剧。',traits:{cling:3,chaos:1,drama:3,social:1,yolo:2,solo:4},tips:['不要打扰 TA 凝视虚空，那是充能时刻，请勿中断','尊重 TA 的神秘感，有些事你永远不会知道','TA 选择靠近你说明你通过了某种不公开的考核，请珍惜'],compatTag:'信徒与祭司',compat:'你永远不完全理解 TA，TA 也不需要被完全理解。这段关系建立在神秘与信任之上。你的职责是信仰，不是解析。'},
+  'INTJ':{nickname:'刺客信条 ASSASSIN-er',roast:'永远在暗影处伏击你的脚踝。TA 只有在需要你续费（喂食）时才会短暂现身。高智商冷暴力专家。',traits:{cling:1,chaos:2,drama:1,social:1,yolo:3,solo:5},tips:['凌晨 1-3 点赤脚走路前，请先开灯确认地面安全','喂食时间零延误，那是 TA 对你仅存的、有条件的信任','接受你们的关系永远不会变得"亲密"，TA 设计如此'],compatTag:'雇主与雇员',compat:'你以为你养了一只宠物。TA 以为 TA 雇了一个服务员。平衡点是：你准时续费，TA 不出现。双方都满意。'},
+  'ESTP':{nickname:'该死精神小狗 SPIRIT-er',roast:'见猫挑衅猫，见狗挑衅狗。如果这个世界是一场格斗赛，TA 肯定是那个最先白给的。活着就是为了搞点事。',traits:{cling:3,chaos:4,drama:3,social:5,yolo:5,solo:3},tips:['提前备好急救预案，TA 的作死概率显著高于行业平均水平','遇到其他动物时收紧牵引绳，TA 不评估胜率只评估机会','给 TA 找个势均力敌的玩伴，否则你就是那个对手'],compatTag:'监护人关系',compat:'你不是主人，你是监护人。核心工作是在 TA 自我毁灭之前把 TA 捞出来。这份工作没有下班时间。'},
+  'ESFP':{nickname:'DRAMA小样 DRAMA-qr',roast:'只要家里没人理 TA，TA 就要上演各种假装受伤、假装饿晕的戏码。戏很多，没舞台也要自己搭。',traits:{cling:4,chaos:2,drama:5,social:5,yolo:2,solo:1},tips:['保持适量关注输出，TA 的戏码和你给的注意力成反比','不要被 TA 的"受伤"表演骗进急诊室，先冷静观察三秒','帮 TA 录视频，TA 是为了出道而降临这个世界的'],compatTag:'演员与观众',compat:'你是 TA 的专属观众席。没有你的关注，表演就失去意义。维持热情的观众状态，才能让这段关系持续产生内容价值。'},
+  'ENFP':{nickname:'吗喽 MONKEY-er',roast:'精神在树栖，灵魂拒绝规训。你以为 TA 在跟你玩，其实 TA 只是在单纯地发疯。你是辅助，疯是主线。',traits:{cling:3,chaos:3,drama:4,social:4,yolo:4,solo:3},tips:['每天准备三个新玩具，TA 的专注力上限大约是 7 分钟','不要期待 TA 跟你配合，你是 TA 的游乐设施而非主人','接受混乱是 TA 的生活方式，你的审美在这里不重要'],compatTag:'游乐设施关系',compat:'你对 TA 来说是最好玩的玩具之一，但不是唯一的。TA 的世界永远比你的想象更宽阔、更混乱、也更有趣。跟上就好。'},
+  'ENTP':{nickname:'杠精 TROLL-er',roast:'你让东 TA 往西，你不让干啥 TA 干啥。TA 活着的唯一动力就是看你破防。家里的一坨搅屎棍。',traits:{cling:2,chaos:3,drama:3,social:4,yolo:4,solo:3},tips:['不要下达任何明确命令，TA 的人生信条是"你说啥我偏不"','善用反向心理：假装禁止 TA 做某事，TA 会主动去做','破防了就输了。保持绝对淡定是唯一出路'],compatTag:'永久博弈',compat:'你们的关系本质是一场永无终局的智力博弈。TA 测试你的极限，你测试 TA 的底线。乐趣在于过程，不在结果。'},
+  'ISTP':{nickname:'垃圾桶潜水员 DIVER-er',roast:'你的垃圾桶是 TA 的藏宝洞，你的拖鞋是 TA 的磨牙棒。沉迷于拆解和探索，不需要你教，TA 就是规矩。',traits:{cling:1,chaos:4,drama:1,social:1,yolo:3,solo:5},tips:['定期检查 TA 的"藏宝库"，及时清理其中的危险物品','提供可以合法拆解的玩具，否则 TA 会把目标升级到家具','不要期待情感回应，TA 是有感情的工具人，但工具属性优先'],compatTag:'独行侠关系',compat:'TA 不需要你的陪伴，但允许你存在。这已经是 TA 能给出的最高规格待遇。提供好后勤，不要干涉探索计划。'},
+  'ISFP':{nickname:'一滩烂肉 MEAT-er',roast:'液体形态。除了吃饭和上厕所，你可以把 TA 摆成任何形状。物理意义上的无能为力，主打一个陪伴。',traits:{cling:4,chaos:1,drama:1,social:2,yolo:1,solo:2},tips:['在 TA 身旁放足够的零食，移动对 TA 来说是不必要的能耗','学会把 TA 当抱枕使用，这可能是你们关系最高价值的体现','不要要求 TA 做任何事，TA 已经尽力了，摊在那儿就是贡献'],compatTag:'人形抱枕关系',compat:'你不需要它做任何事，它也不会做任何事。这是一段极度舒适、零内耗的关系。它的存在本身就是它的全部价值。'},
+  'INFP':{nickname:'脆皮豆芽 SAD-er',roast:'极其敏感。你刚才大声说话吓到 TA 了，TA 现在决定回想这一生，并自闭三天。一颗包裹在毛皮里的玻璃心。',traits:{cling:3,chaos:1,drama:3,social:1,yolo:1,solo:3},tips:['说话请轻声细语，TA 的玻璃心随时可能碎裂','陌生人来访前务必提前预警，让 TA 有充分的心理和物理准备','不要误解 TA 的敏感是矫情，TA 的情感密度是你的三倍以上'],compatTag:'守护关系',compat:'你是 TA 这个脆弱生命体的最终防线。TA 需要你创造安全、低刺激、高温柔的环境。你的稳定是 TA 最大的礼物。'},
+  'INTP':{nickname:'脑干缺失者 EMPTY-er',roast:'眼神中透露出一种未被知识污染的原始美。经常卡在各种缝隙里，思考"我是谁"。脑干缺失的美感天花板。',traits:{cling:1,chaos:2,drama:1,social:1,yolo:3,solo:4},tips:['定期检查家中各类缝隙，确认 TA 没有卡在某个哲学困境里','所有洞口直径须小于 TA 的头围，否则后果自负','TA 那个茫然的眼神不是无辜，那是真的什么都不知道，请接受'],compatTag:'观察者关系',compat:'TA 活在自己的宇宙里，你是一个偶尔路过的食物供给者。TA 永远带来意想不到的惊喜（通常是负面的）。'},
+};
+
+const TRAIT_DEFS=[
+  {key:'cling',label:'粘人指数'},{key:'chaos',label:'破坏力'},
+  {key:'drama',label:'演技天赋'},{key:'social',label:'社交热情'},
+  {key:'yolo', label:'作死概率'},{key:'solo',  label:'独立性'},
+];
+
+// ============================================================
+// STATE & QUIZ LOGIC
+// ============================================================
+let petName='', currentQ=0, answers={EI:[],SN:[],TF:[],JP:[]};
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function startQuiz(){
+  petName=document.getElementById('pet-name-input').value.trim()||'主子';
+  answers={EI:[],SN:[],TF:[],JP:[]};
+  currentQ=0;
+  document.getElementById('q-pet').textContent=petName;
+  showScreen('quiz'); renderQ();
+}
+function goBack(){
+  if(currentQ>0){ const q=QS[currentQ-1]; answers[q.dim].pop(); currentQ--; renderQ(); }
+  else showScreen('welcome');
+}
+function renderQ(){
+  const q=QS[currentQ];
+  const pct=((currentQ+1)/QS.length*100).toFixed(1);
+  document.getElementById('p-fill').style.width=pct+'%';
+  document.getElementById('q-ctr').textContent=(currentQ+1)+' / '+QS.length;
+  document.getElementById('q-num').textContent=q.num;
+  document.getElementById('q-text').textContent=q.text;
+  const list=document.getElementById('opts'); list.innerHTML='';
+  q.options.forEach(o=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.innerHTML=`<div class="opt-l">${o.l}</div><div class="opt-t">${o.t}</div>`;
+    btn.onclick=()=>pick(o.s,btn,q.dim);
+    list.appendChild(btn);
+  });
+}
+function pick(score,btn,dim){
+  if(document.querySelector('.opt.sel')) return;
+  btn.classList.add('sel');
+  answers[dim].push(score);
+  setTimeout(()=>{ currentQ++; if(currentQ>=QS.length){ showScreen('loading'); setTimeout(showResult,1900); } else renderQ(); },380);
+}
+
+// ============================================================
+// SCORING & RESULT
+// ============================================================
+function calc(){
+  const r=(arr,v)=>arr.length?arr.filter(x=>x===v).length/arr.length:0.5;
+  const ei=r(answers.EI,'E'), sn=r(answers.SN,'S'), tf=r(answers.TF,'T'), jp=r(answers.JP,'J');
+  const e1=ei>=.5?'E':'I', e2=sn>=.5?'S':'N', e3=tf>=.5?'T':'F', e4=jp>=.5?'J':'P';
+  const type=e1+e2+e3+e4;
+  const hit=[answers.EI.filter(x=>x===e1).length, answers.SN.filter(x=>x===e2).length, answers.TF.filter(x=>x===e3).length, answers.JP.filter(x=>x===e4).length].reduce((a,b)=>a+b,0);
+  return {type,ei,sn,tf,jp,e1,e2,e3,e4,hit,conf:Math.round(hit/12*100)};
+}
+
+function showResult(){
+  const r=calc();
+  const data=TYPES[r.type]||TYPES['INTP'];
+  const avcfg=AVATARS[r.type]||AVATARS['INTP'];
+
+  // Avatar
+  document.getElementById('r-avatar').innerHTML=makeSVG(avcfg);
+
+  // Hero
+  document.getElementById('r-for').textContent=petName+' 的人格类型是';
+  document.getElementById('r-type').innerHTML=`<span class="hi">${r.type[0]}</span>${r.type.slice(1)}`;
+  document.getElementById('r-nick').textContent=data.nickname;
+
+  // Roast
+  document.getElementById('r-roast').textContent=data.roast;
+
+  // Compat
+  document.getElementById('r-ctag').textContent=data.compatTag;
+  document.getElementById('r-compat').textContent=data.compat;
+
+  // Tips
+  document.getElementById('r-tips').innerHTML=data.tips.map((t,i)=>
+    `<div class="tip"><div class="tip-n">${i+1}</div><div class="tip-t">${t}</div></div>`).join('');
+
+  showScreen('result');
+
+  setTimeout(()=>{
+    // Confidence
+    document.getElementById('c-fill').style.width=r.conf+'%';
+    document.getElementById('c-pct').innerHTML=r.conf+'<span>%</span>';
+    document.getElementById('c-hit').innerHTML=`精准命中 <em>${r.hit}</em> / 12 题`;
+
+    // Dim bars
+    document.getElementById('b-ei').style.width=(r.ei*100)+'%';
+    document.getElementById('b-sn').style.width=(r.sn*100)+'%';
+    document.getElementById('b-tf').style.width=(r.tf*100)+'%';
+    document.getElementById('b-jp').style.width=(r.jp*100)+'%';
+    ['ei','sn','tf','jp'].forEach(d=>{
+      const scores={ei:r.ei,sn:r.sn,tf:r.tf,jp:r.jp};
+      const row=document.getElementById('d-'+d);
+      if(row) row.querySelector(scores[d]>=.5?'.dim-l':'.dim-r').classList.add('hi');
+    });
+
+    // Traits
+    const tg=document.getElementById('r-traits'); tg.innerHTML='';
+    TRAIT_DEFS.forEach(def=>{
+      const v=data.traits[def.key];
+      const lv=v>=4?'H':v>=3?'M':'L';
+      let dots='';
+      for(let i=1;i<=5;i++) dots+=`<div class="dp${i<=v?' on':''}"></div>`;
+      tg.innerHTML+=`<div class="tr-item"><div class="tr-name">${def.label}</div><div class="tr-dots">${dots}</div><div class="tr-val ${lv}">${lv}</div></div>`;
+    });
+    // Animate dots
+    tg.querySelectorAll('.dp.on').forEach((dp,i)=>{
+      dp.style.background='transparent'; dp.style.boxShadow='none';
+      setTimeout(()=>{ dp.style.background='var(--blue)'; dp.style.boxShadow='0 0 5px rgba(0,153,255,.6)'; }, i*55+100);
+    });
+  },250);
+}
+
+function shareResult(){
+  const r=calc(); const data=TYPES[r.type]||TYPES['INTP'];
+  const text=`我家${petName}的 petBTI 测评结果\n\n类型：${r.type}「${data.nickname}」\n置信度：${r.conf}%（精准命中 ${r.hit}/12 题）\n\n${data.roast}\n\n#petBTI #宠物人格测评`;
+  if(navigator.share) navigator.share({title:'petBTI 宠物人格测评',text});
+  else navigator.clipboard.writeText(text).then(()=>toast('已复制到剪贴板')).catch(()=>toast('长按选择文字复制'));
+}
+function restartQuiz(){ document.getElementById('pet-name-input').value=''; showScreen('welcome'); }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2500); }
+</script>
+</body>
+</html>
