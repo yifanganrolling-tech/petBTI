@@ -40,6 +40,17 @@ html,body { height:100%; font-family:'Inter',-apple-system,system-ui,sans-serif;
 .btn-p .arr { width:20px; height:20px; background:rgba(0,0,0,.08); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; }
 .w-meta { margin-top:16px; font-size:12px; color:rgba(255,255,255,.25); text-align:center; }
 
+/* PET TYPE SELECT */
+.pt-label { display:block; font-size:11px; font-weight:500; color:var(--silver); letter-spacing:.8px; text-transform:uppercase; margin-bottom:10px; }
+.pt-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.pt-btn { background:var(--frosted); box-shadow:var(--ring); border:none; border-radius:16px; padding:18px 10px 14px; font-family:inherit; color:var(--silver); cursor:pointer; transition:box-shadow .2s,background .2s,color .2s; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.pt-btn:active { background:var(--frosted-h); }
+.pt-btn .pt-icon { font-size:36px; line-height:1; }
+.pt-btn .pt-name { font-size:13px; font-weight:600; letter-spacing:.5px; }
+.pt-btn .pt-sub { font-size:10px; color:rgba(255,255,255,.3); letter-spacing:.3px; margin-top:-2px; }
+.pt-btn.sel { box-shadow:var(--ring-a),0 0 20px var(--blue-glow); background:rgba(0,153,255,.06); color:var(--white); }
+.pt-btn.sel .pt-sub { color:var(--blue); }
+
 /* QUIZ */
 .q-nav { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
 .q-back { width:32px; height:32px; border-radius:50%; background:var(--frosted); box-shadow:var(--ring); border:none; color:var(--silver); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
@@ -159,11 +170,24 @@ html,body { height:100%; font-family:'Inter',-apple-system,system-ui,sans-serif;
 <div id="screen-welcome" class="screen active">
   <div class="w-glow"></div>
   <div class="w-top" style="position:relative;z-index:1">
-    <div class="eyebrow">v1.0 · The Lexicon</div>
+
     <div class="w-title">pet<em>BTI</em></div>
-    <div class="w-desc">12 道行为题，破解你家主子的真实人格类型。</div>
+    <div class="w-desc">你以为你在养它，其实你对它一无所知。<br>12 道题，猫狗各有专属，2 分钟看穿主子的真实人格。</div>
   </div>
   <div style="position:relative;z-index:1">
+    <label class="pt-label">你家主子的物种</label>
+    <div class="pt-row">
+      <button class="pt-btn" id="pt-cat" onclick="selectPetType('cat')">
+        <span class="pt-icon">🐱</span>
+        <span class="pt-name">液态生命体</span>
+        <span class="pt-sub">它不需要你（谎言）</span>
+      </button>
+      <button class="pt-btn" id="pt-dog" onclick="selectPetType('dog')">
+        <span class="pt-icon">🐶</span>
+        <span class="pt-name">阳光续命器</span>
+        <span class="pt-sub">它爱你它非常爱你</span>
+      </button>
+    </div>
     <label class="inp-label">主子的名字</label>
     <input class="inp" type="text" id="pet-name-input" placeholder="橘猫、二狗子…" maxlength="10" onkeydown="if(event.key==='Enter')startQuiz()">
     <button class="btn-p" onclick="startQuiz()">开始测评 <span class="arr">→</span></button>
@@ -200,7 +224,7 @@ html,body { height:100%; font-family:'Inter',-apple-system,system-ui,sans-serif;
 <div id="screen-result" class="screen">
   <div class="r-hero">
     <div class="r-hero-glow"></div>
-    <div class="r-eyebrow eyebrow">petBTI TYPE RESULT</div>
+
     <div class="r-avatar" id="r-avatar"></div>
     <div class="r-for" id="r-for">你家主子</div>
     <div class="r-nick" id="r-nick">吗喽 MONKEY-er</div>
@@ -717,80 +741,158 @@ const AVATARS = {
 };
 
 // ============================================================
-// QUIZ DATA
+// QUIZ DATA — 猫版
 // ============================================================
-const QS = [
-  {id:'Q1',num:'Q01',dim:'EI',text:'门铃突然响了。TA 的第一反应？',options:[
-    {l:'A',t:'已经在门口候着了，甚至比你先到，叫声能劝退外卖小哥',s:'E'},
-    {l:'B',t:'小跑过来，在门口保持礼貌性警戒距离',s:'E'},
-    {l:'C',t:'抬头确认了一下不是食物相关事件，继续躺',s:'I'},
-    {l:'D',t:'瞬间消失。这个家里从来没有住过它',s:'I'},
+const QS_CAT = [
+  {id:'Q1',num:'Q01',dim:'EI',text:'门铃响了。你准备去开门。它——',options:[
+    {l:'A',t:'已经在门口了。它怎么知道的',s:'E'},
+    {l:'B',t:'从沙发上跳下来，礼貌地跟你一起走过去',s:'E'},
+    {l:'C',t:'抬了一下头，判断这件事跟它无关，重新闭眼',s:'I'},
+    {l:'D',t:'消失了。你不记得家里有猫',s:'I'},
   ]},
-  {id:'Q2',num:'Q02',dim:'TF',text:'你精心设计了一场"哭泣表演"，对着 TA 来了一段，TA 怎么反应？',options:[
-    {l:'A',t:'立刻冲过来又舔又蹭，急成小狗，比你还委屈',s:'F'},
-    {l:'B',t:'慢慢走来，用那双大眼睛一动不动地盯着你',s:'F'},
-    {l:'C',t:'斜眼鉴定了一下，认定你没事，继续舔毛',s:'T'},
-    {l:'D',t:'直接踩着你脸走过去。你的悲伤不在服务范围内',s:'T'},
+  {id:'Q2',num:'Q02',dim:'TF',text:'你哭了。它看见了。然后——',options:[
+    {l:'A',t:'冲过来疯狂舔你的脸，完全不知道怎么办但一定要做点什么',s:'F'},
+    {l:'B',t:'走过来，坐在你旁边，什么都没说',s:'F'},
+    {l:'C',t:'确认你没有受伤，舔了一下自己的爪子，走了',s:'T'},
+    {l:'D',t:'踩过你的脸，去找水喝了',s:'T'},
   ]},
-  {id:'Q3',num:'Q03',dim:'TF',text:'你正在吃好吃的，故意不分给 TA。TA 的策略是？',options:[
-    {l:'A',t:'眼神攻势全开，把每一口都盯出负罪感',s:'F'},
-    {l:'B',t:'坐在旁边发出细微呜咽，精准打击你的良心',s:'F'},
-    {l:'C',t:'来闻了一下，判定不符合预期，走了',s:'T'},
-    {l:'D',t:'直接上爪。没有谈判，只有行动',s:'T'},
+  {id:'Q3',num:'Q03',dim:'SN',text:'你的猫正在看你。它没有动。它已经看了你五分钟了。你——',options:[
+    {l:'A',t:'开始感到不安，感觉自己做错了什么',s:'N'},
+    {l:'B',t:'也盯回去，决定进行一场灵魂层面的对视',s:'N'},
+    {l:'C',t:'叫了它一声，它没有任何反应，你感到一阵虚无',s:'S'},
+    {l:'D',t:'检查了一下猫粮是不是空了，放心了',s:'S'},
   ]},
-  {id:'Q4',num:'Q04',dim:'JP',text:'描述一下 TA 的生物钟',options:[
-    {l:'A',t:'比手机闹钟还准。到点不喂，启动全套催饭流程',s:'J'},
-    {l:'B',t:'大体规律，偶尔给你一点人道主义豁免',s:'J'},
-    {l:'C',t:'完全取决于今天的心情和宇宙的状态',s:'P'},
-    {l:'D',t:'凌晨 3 点发癫，下午 2 点睡死。每天都是新谜题',s:'P'},
+  {id:'Q4',num:'Q04',dim:'JP',text:'它的生物钟——',options:[
+    {l:'A',t:'比你的手机闹钟还准，催饭从不失约',s:'J'},
+    {l:'B',t:'大体规律，给你留了一点人道主义弹性',s:'J'},
+    {l:'C',t:'取决于今天的心情和宇宙的状态',s:'P'},
+    {l:'D',t:'凌晨 3 点发癫，下午 2 点昏睡。每天都是谜',s:'P'},
   ]},
-  {id:'Q5',num:'Q05',dim:'EI',text:'你下班推开门的那一瞬间',options:[
-    {l:'A',t:'爆炸式迎接，邻居会以为你们在打架',s:'E'},
-    {l:'B',t:'摇着尾巴跑来，热情但保留体面',s:'E'},
-    {l:'C',t:'对视两秒，确认是你，然后继续躺回去',s:'I'},
-    {l:'D',t:'纹丝不动。你是这个家的透明人',s:'I'},
+  {id:'Q5',num:'Q05',dim:'EI',text:'你下班回来推开门，它——',options:[
+    {l:'A',t:'已经在门口了。它一直在等',s:'E'},
+    {l:'B',t:'小跑过来蹭了你的腿，完成签到，走了',s:'E'},
+    {l:'C',t:'抬头看了你两秒，确认是你，继续躺',s:'I'},
+    {l:'D',t:'没有动静。你是这个家的透明人',s:'I'},
   ]},
-  {id:'Q6',num:'Q06',dim:'EI',text:'带 TA 去陌生地方（朋友家 / 宠物医院候诊室），TA 的状态？',options:[
-    {l:'A',t:'全场社交，想认识在场每一个生命体',s:'E'},
-    {l:'B',t:'紧张但好奇，慢慢开始自主探索',s:'E'},
-    {l:'C',t:'贴着你不动，对外部世界保持高度审慎',s:'I'},
-    {l:'D',t:'化身石雕，或者想方设法钻进你的包里',s:'I'},
+  {id:'Q6',num:'Q06',dim:'TF',text:'你在吃好吃的，不打算分给它。它——',options:[
+    {l:'A',t:'用眼神把你的每一口都盯出负罪感',s:'F'},
+    {l:'B',t:'爪子搭上你的手臂，保持物理接触',s:'F'},
+    {l:'C',t:'凑过来闻了一下，走了，不合口味',s:'T'},
+    {l:'D',t:'直接把爪子伸进你碗里。没有谈判',s:'T'},
   ]},
-  {id:'Q7',num:'Q07',dim:'SN',text:'家里出现了一只虫子。TA 怎么处理？',options:[
-    {l:'A',t:'秒速定位，精准狩猎，问题解决，继续生活',s:'N'},
-    {l:'B',t:'蹲下来盯着它研究了很久，再动手',s:'N'},
-    {l:'C',t:'看了一眼，确认不是食物，选择无视',s:'S'},
-    {l:'D',t:'被吓到了。那个东西比它更有气势',s:'S'},
+  {id:'Q7',num:'Q07',dim:'EI',text:'此题没有题目。你的猫在旁边。请选一个选项。',options:[
+    {l:'A',t:'感觉它想让我选 A',s:'E'},
+    {l:'B',t:'不管了，选 B',s:'E'},
+    {l:'C',t:'我需要更多信息才能作出判断',s:'I'},
+    {l:'D',t:'它看了我一眼又走了。我感到一阵失落',s:'I'},
   ]},
-  {id:'Q8',num:'Q08',dim:'JP',text:'凌晨 2 点，你睡得正香，TA 突然——',options:[
-    {l:'A',t:'在你身上踩钢琴，然后冲出去开始百米冲刺',s:'P'},
-    {l:'B',t:'轻轻走来，蹭了你一下，确认你还活着，趴下',s:'J'},
-    {l:'C',t:'独自开始 party，叼玩具互殴，完全不需要你',s:'P'},
-    {l:'D',t:'没有动静。TA 比你睡得更香',s:'J'},
+  {id:'Q8',num:'Q08',dim:'JP',text:'你在工作，它想让你理它。它的第一步是——',options:[
+    {l:'A',t:'走过键盘，在你文档里留下："jjjjkk;;"',s:'P'},
+    {l:'B',t:'直接坐在你的笔记本上，用体重和体温表达诉求',s:'P'},
+    {l:'C',t:'坐在旁边，发出一声小叫，等你回应',s:'J'},
+    {l:'D',t:'找了个地方盘起来，不需要你',s:'J'},
   ]},
-  {id:'Q9',num:'Q09',dim:'TF',text:'TA 的固定睡觉位置是？',options:[
-    {l:'A',t:'你的脸 / 脖子 / 胸口。必须贴，否则无法入睡',s:'F'},
-    {l:'B',t:'你身边，不一定碰，但要在同一个宇宙里',s:'F'},
-    {l:'C',t:'有自己固定的窝，独立自主，不叨扰',s:'T'},
-    {l:'D',t:'鞋盒、水缸、浴室地板，今天睡哪不一定',s:'T'},
+  {id:'Q9',num:'Q09',dim:'TF',text:'它固定睡在——',options:[
+    {l:'A',t:'你的脸上。必须贴着你的脸',s:'F'},
+    {l:'B',t:'你的怀里或腿上，要有体温',s:'F'},
+    {l:'C',t:'它自己的窝，独立自主，不打扰你',s:'T'},
+    {l:'D',t:'不一定。今天浴室地板，明天鞋盒，后天微波炉顶部',s:'T'},
   ]},
-  {id:'Q10',num:'Q10',dim:'SN',text:'TA 第一次对着镜子看到自己，反应是？',options:[
-    {l:'A',t:'走过去闻了闻，确认没有气味，不是威胁，走了',s:'S'},
-    {l:'B',t:'全力攻击镜中入侵者，守护领土绝不退让',s:'S'},
-    {l:'C',t:'反复用爪子戳镜面，对比自己的动作，陷入沉思',s:'N'},
-    {l:'D',t:'花了二十分钟试图找到镜子后面的通道',s:'N'},
+  {id:'Q10',num:'Q10',dim:'SN',text:'你直视着它，把桌上的杯子缓缓往边缘推——',options:[
+    {l:'A',t:'比你先一步拍下去，然后看着你',s:'N'},
+    {l:'B',t:'好奇地走过来，帮你一起推',s:'N'},
+    {l:'C',t:'冷漠地盯着你，表情在评估你的智力水平',s:'S'},
+    {l:'D',t:'没有看。这件事不在它的认知范围内',s:'S'},
   ]},
-  {id:'Q11',num:'Q11',dim:'SN',text:'你直视着 TA，缓缓把桌上的杯子往边缘推……',options:[
-    {l:'A',t:'看都不看。这种低级试探它不屑于回应',s:'S'},
-    {l:'B',t:'冷漠地盯着你，似乎在评估你的智力水平',s:'S'},
-    {l:'C',t:'好奇地走过来，用爪子帮你一起推',s:'N'},
-    {l:'D',t:'比你先一步把杯子拍下去，然后无辜地看着你',s:'N'},
+  {id:'Q11',num:'Q11',dim:'JP',text:'凌晨 2 点，你睡着了，它——',options:[
+    {l:'A',t:'在你身上踩了一遍钢琴，然后全速冲出去又冲回来',s:'P'},
+    {l:'B',t:'独自开始和玩具搏斗，完全不需要你',s:'P'},
+    {l:'C',t:'蹭了你一下，确认你还活着，趴下来睡了',s:'J'},
+    {l:'D',t:'没有动静。它比你睡得更好',s:'J'},
   ]},
-  {id:'Q12',num:'Q12',dim:'JP',text:'你出差三天刚回来，TA 的反应？',options:[
-    {l:'A',t:'扑上来，叫，蹬，情绪彻底崩了，眼睛都红了',s:'P'},
-    {l:'B',t:'开心地蹭过来，尾巴出卖了它有多想你',s:'J'},
-    {l:'C',t:'淡淡地看了你一眼。哦，回来了',s:'J'},
-    {l:'D',t:'给你一个背影。它决定用冷战惩罚你的离开',s:'P'},
+  {id:'Q12',num:'Q12',dim:'JP',text:'你出差三天回来',options:[
+    {l:'A',t:'它冲过来嚎叫，你欠它一个完整的解释',s:'P'},
+    {l:'B',t:'绕着你闻了好几圈，确认真的是你，才算了',s:'P'},
+    {l:'C',t:'看了你一眼。哦，回来了',s:'J'},
+    {l:'D',t:'给你一个背影。冷战的时钟已经启动，有效期未知',s:'J'},
+  ]},
+];
+
+// ============================================================
+// QUIZ DATA — 狗版
+// ============================================================
+const QS_DOG = [
+  {id:'Q1',num:'Q01',dim:'EI',text:'门铃响了。你准备去开门。它——',options:[
+    {l:'A',t:'已经在门口了，用叫声替你完成了所有社交威慑工作',s:'E'},
+    {l:'B',t:'跑过来待命，准备热烈欢迎任何来访者',s:'E'},
+    {l:'C',t:'看了看你，确认你在处理，继续趴着',s:'I'},
+    {l:'D',t:'被门铃声吓到了，现在在沙发后面，从缝里看',s:'I'},
+  ]},
+  {id:'Q2',num:'Q02',dim:'TF',text:'你哭了。它看见了。然后——',options:[
+    {l:'A',t:'冲过来狂舔你的脸，急到完全不知道该怎么办',s:'F'},
+    {l:'B',t:'把脑袋枕在你腿上，就这样陪着你，什么都没说',s:'F'},
+    {l:'C',t:'确认你没有受伤，回去继续啃玩具',s:'T'},
+    {l:'D',t:'以为你在玩，开始扑你，局面迅速失控',s:'T'},
+  ]},
+  {id:'Q3',num:'Q03',dim:'SN',text:'你看着你的狗。它看着你。你们对视了三秒。它的尾巴开始摇。你——',options:[
+    {l:'A',t:'也开始开心，被感染了，不知道为什么',s:'N'},
+    {l:'B',t:'跟它说了句"你好"，它尾巴摇得更厉害了',s:'N'},
+    {l:'C',t:'感到一阵莫名的感动',s:'S'},
+    {l:'D',t:'去给它拿了个零食，这件事就这样结束了',s:'S'},
+  ]},
+  {id:'Q4',num:'Q04',dim:'JP',text:'它的生物钟——',options:[
+    {l:'A',t:'定时定点，准时催饭，从不迟到，从不手软',s:'J'},
+    {l:'B',t:'基本规律，偶尔因为看见松鼠打乱全天计划',s:'J'},
+    {l:'C',t:'发疯时间是随机的，睡觉时间跟着你走',s:'P'},
+    {l:'D',t:'时间对它来说是一个哲学概念',s:'P'},
+  ]},
+  {id:'Q5',num:'Q05',dim:'EI',text:'你下班回来推开门，它——',options:[
+    {l:'A',t:'在门口坐着等你，见到你之后全身失控，差点把你撞倒',s:'E'},
+    {l:'B',t:'从里面跑来，尾巴的旋转速度令人担忧',s:'E'},
+    {l:'C',t:'在沙发上抬头，尾巴摇了几下，继续躺',s:'I'},
+    {l:'D',t:'睡得很沉，你进来了才慢慢反应过来',s:'I'},
+  ]},
+  {id:'Q6',num:'Q06',dim:'TF',text:'你在吃东西不给它。它——',options:[
+    {l:'A',t:'下巴搭在你膝盖上，用世界上最委屈的眼神看着你',s:'F'},
+    {l:'B',t:'发出细小的哀嚎，进行精准情感施压',s:'F'},
+    {l:'C',t:'坐在旁边，表情显示它已经与欲望和解',s:'T'},
+    {l:'D',t:'你一分心，它直接上了。没有窗口期',s:'T'},
+  ]},
+  {id:'Q7',num:'Q07',dim:'EI',text:'此题没有题目。你的狗在旁边。请选一个选项。',options:[
+    {l:'A',t:'感觉它想让我选 A，我也想选 A',s:'E'},
+    {l:'B',t:'选 B，然后摸了它一下',s:'E'},
+    {l:'C',t:'我在认真思考这道题的意义',s:'I'},
+    {l:'D',t:'我选之前它已经走了',s:'I'},
+  ]},
+  {id:'Q8',num:'Q08',dim:'JP',text:'你出门了，家里只有它（你装了摄像头）',options:[
+    {l:'A',t:'等你十分钟，放弃，开始系统性拆家，从沙发开刀',s:'P'},
+    {l:'B',t:'自娱自乐，把玩具扔来扔去，完全不需要你',s:'P'},
+    {l:'C',t:'把你的拖鞋叼进窝里陪着，就这样一直等',s:'J'},
+    {l:'D',t:'趴在门口，纹丝不动，等了你一整天',s:'J'},
+  ]},
+  {id:'Q9',num:'Q09',dim:'TF',text:'外面打雷。你回家，它——',options:[
+    {l:'A',t:'已经冲到你怀里了，需要被立刻抱住，越紧越好',s:'F'},
+    {l:'B',t:'走过来蹭着你，想让你陪，但说不出口',s:'F'},
+    {l:'C',t:'你进来了它稍微镇定了，走回自己的窝，没事了',s:'T'},
+    {l:'D',t:'雷？什么雷？它正在认真研究地毯上一处气味',s:'T'},
+  ]},
+  {id:'Q10',num:'Q10',dim:'SN',text:'你藏了一块零食，看它能不能找到',options:[
+    {l:'A',t:'10 秒内找到，然后用眼神看着你：就这？',s:'N'},
+    {l:'B',t:'系统性用鼻子扫描全屋，找到了，非常满足',s:'N'},
+    {l:'C',t:'闻到了大概方向，绕了几圈，放弃，去玩玩具了',s:'S'},
+    {l:'D',t:'没找到，但翻遍了沙发垫，意外找到三个月前丢的球',s:'S'},
+  ]},
+  {id:'Q11',num:'Q11',dim:'SN',text:'遛弯时它突然发现前方有一只猫',options:[
+    {l:'A',t:'立刻进入追逐模式，猫消失在视野后还在原地怅然若失',s:'N'},
+    {l:'B',t:'热情凑过去，被猫拍了鼻子，仍然想做朋友',s:'N'},
+    {l:'C',t:'闻了一下气味，默默判定此地不宜久留',s:'S'},
+    {l:'D',t:'完全没注意到，它正在认真研究地上一块口香糖残骸',s:'S'},
+  ]},
+  {id:'Q12',num:'Q12',dim:'JP',text:'你出差三天回来',options:[
+    {l:'A',t:'一开门就在地上打滚了，情绪烈度超出你所有预期',s:'P'},
+    {l:'B',t:'绕着你疯狂摇尾巴，一直到你抱住它才平静',s:'P'},
+    {l:'C',t:'开心地迎上来，蹭了你，然后去拿玩具给你看',s:'J'},
+    {l:'D',t:'从睡梦中清醒，懵了两秒，然后开心起来',s:'J'},
   ]},
 ];
 
@@ -803,10 +905,10 @@ const TYPES={
   'ENFJ':{nickname:'传销头目 MLM-er',roast:'擅长情感绑架。只要你一动身，TA 就用眼神控诉你是抛妻弃子的陈世美。TA 觉得你没有 TA 活不下去。',traits:{cling:5,chaos:1,drama:5,social:4,yolo:1,solo:1},tips:['出门前给 TA 充分的道别仪式，否则你会被情感勒索三天','回家后必须给足 20 分钟高质量陪伴，不然 TA 用眼神让你愧疚一整晚','永远不要在 TA 面前透露"独自生活也挺好"的信号'],compatTag:'情感共生体',compat:'你们的关系本质上是一场持续的情感拉锯战。TA 需要你，TA 也让你需要 TA。你以为你在养宠物，其实你在被管理。'},
   'ENTJ':{nickname:'拆迁办主任 CRASH-er',roast:'对家里的装修有自己的设计方案（通常是通过啃咬实现）。你不配合，TA 就强拆。自带霸道总裁 BGM。',traits:{cling:2,chaos:5,drama:2,social:3,yolo:3,solo:4},tips:['重要物品请锁柜子，TA 的"设计方案"执行力极强且不分贵贱','提供充足的合法破坏渠道——猫抓板、啃咬玩具、纸箱','不要和 TA 硬刚，TA 永远有备用方案，而你没有'],compatTag:'强强关系',compat:'你们都是有主见的个体，但家里只有一个 CEO 的位置，且那个位置不是你的。学会在 TA 的战略框架内找到你的生态位。'},
   'ISTJ':{nickname:'保安大爷 GUARD-er',roast:'坐在窗台一上午一动不动，观察外面每一个路人。家里的秩序感是由 TA 的固执撑起的。极其自律，不爱社交。',traits:{cling:1,chaos:1,drama:1,social:1,yolo:1,solo:5},tips:['维持规律的作息，任何变化都会让 TA 产生"安保漏洞"警觉','不要强迫 TA 社交，TA 的职责是观察，不是参与','窗台是 TA 的岗亭，请勿遮挡观察视野'],compatTag:'房东与保安',compat:'你提供住所和食物，TA 提供安全感（单方面的）。这是一段井水不犯河水、分工明确的专业关系。'},
-  'ISFJ':{nickname:'田螺死士 SIMP-er',roast:'卑微的付出型人格。只要你给个眼神，TA 愿意为你去叼那个全是口水的、发臭的球 100 次。你是 TA 世界的唯一光。',traits:{cling:5,chaos:1,drama:2,social:3,yolo:1,solo:1},tips:['定期给予正面反馈，TA 需要确认自己的付出被看见','不要辜负 TA 的信任，TA 把你当作全世界','出门告别、回家问候——这是维持 TA 心理稳定的基本仪式'],compatTag:'绝对忠诚',compat:'TA 是你见过最忠诚的生命体。你的一个眼神对 TA 来说是全部意义。请善待这份纯粹。'},
+  'ISFJ':{nickname:'田螺卫士 SIMP-er',roast:'卑微的付出型人格。只要你给个眼神，TA 愿意为你去叼那个全是口水的、发臭的球 100 次。你是 TA 世界的唯一光。',traits:{cling:5,chaos:1,drama:2,social:3,yolo:1,solo:1},tips:['定期给予正面反馈，TA 需要确认自己的付出被看见','不要辜负 TA 的信任，TA 把你当作全世界','出门告别、回家问候——这是维持 TA 心理稳定的基本仪式'],compatTag:'绝对忠诚',compat:'TA 是你见过最忠诚的生命体。你的一个眼神对 TA 来说是全部意义。请善待这份纯粹。'},
   'INFJ':{nickname:'邪教祭司 KUL-er',roast:'经常对着墙角或虚空凝视。你怀疑 TA 正在跟外星人通信，或者在诅咒你的年终奖。内心戏可以拍 50 集连续剧。',traits:{cling:3,chaos:1,drama:3,social:1,yolo:2,solo:4},tips:['不要打扰 TA 凝视虚空，那是充能时刻，请勿中断','尊重 TA 的神秘感，有些事你永远不会知道','TA 选择靠近你说明你通过了某种不公开的考核，请珍惜'],compatTag:'信徒与祭司',compat:'你永远不完全理解 TA，TA 也不需要被完全理解。这段关系建立在神秘与信任之上。你的职责是信仰，不是解析。'},
   'INTJ':{nickname:'刺客信条 ASSASSIN-er',roast:'永远在暗影处伏击你的脚踝。TA 只有在需要你续费（喂食）时才会短暂现身。高智商冷暴力专家。',traits:{cling:1,chaos:2,drama:1,social:1,yolo:3,solo:5},tips:['凌晨 1-3 点赤脚走路前，请先开灯确认地面安全','喂食时间零延误，那是 TA 对你仅存的、有条件的信任','接受你们的关系永远不会变得"亲密"，TA 设计如此'],compatTag:'雇主与雇员',compat:'你以为你养了一只宠物。TA 以为 TA 雇了一个服务员。平衡点是：你准时续费，TA 不出现。双方都满意。'},
-  'ESTP':{nickname:'该死精神小狗 SPIRIT-er',roast:'见猫挑衅猫，见狗挑衅狗。如果这个世界是一场格斗赛，TA 肯定是那个最先白给的。活着就是为了搞点事。',traits:{cling:3,chaos:4,drama:3,social:5,yolo:5,solo:3},tips:['提前备好急救预案，TA 的作死概率显著高于行业平均水平','遇到其他动物时收紧牵引绳，TA 不评估胜率只评估机会','给 TA 找个势均力敌的玩伴，否则你就是那个对手'],compatTag:'监护人关系',compat:'你不是主人，你是监护人。核心工作是在 TA 自我毁灭之前把 TA 捞出来。这份工作没有下班时间。'},
+  'ESTP':{nickname:'精神小狗 SPIRIT-er',roast:'见猫挑衅猫，见狗挑衅狗。如果这个世界是一场格斗赛，TA 永远是最冲在前面的那个。活着就是为了搞点事。',traits:{cling:3,chaos:4,drama:3,social:5,yolo:5,solo:3},tips:['提前备好应急预案，TA 的冒险概率显著高于行业平均水平','遇到其他动物时收紧牵引绳，TA 不评估胜率只评估机会','给 TA 找个势均力敌的玩伴，否则你就是那个对手'],compatTag:'监护人关系',compat:'你不是主人，你是监护人。核心工作是在 TA 闯祸之前把 TA 捞出来。这份工作没有下班时间。'},
   'ESFP':{nickname:'DRAMA小样 DRAMA-qr',roast:'只要家里没人理 TA，TA 就要上演各种假装受伤、假装饿晕的戏码。戏很多，没舞台也要自己搭。',traits:{cling:4,chaos:2,drama:5,social:5,yolo:2,solo:1},tips:['保持适量关注输出，TA 的戏码和你给的注意力成反比','不要被 TA 的"受伤"表演骗进急诊室，先冷静观察三秒','帮 TA 录视频，TA 是为了出道而降临这个世界的'],compatTag:'演员与观众',compat:'你是 TA 的专属观众席。没有你的关注，表演就失去意义。维持热情的观众状态，才能让这段关系持续产生内容价值。'},
   'ENFP':{nickname:'吗喽 MONKEY-er',roast:'精神在树栖，灵魂拒绝规训。你以为 TA 在跟你玩，其实 TA 只是在单纯地发疯。你是辅助，疯是主线。',traits:{cling:3,chaos:3,drama:4,social:4,yolo:4,solo:3},tips:['每天准备三个新玩具，TA 的专注力上限大约是 7 分钟','不要期待 TA 跟你配合，你是 TA 的游乐设施而非主人','接受混乱是 TA 的生活方式，你的审美在这里不重要'],compatTag:'游乐设施关系',compat:'你对 TA 来说是最好玩的玩具之一，但不是唯一的。TA 的世界永远比你的想象更宽阔、更混乱、也更有趣。跟上就好。'},
   'ENTP':{nickname:'杠精 TROLL-er',roast:'你让东 TA 往西，你不让干啥 TA 干啥。TA 活着的唯一动力就是看你破防。家里的一坨搅屎棍。',traits:{cling:2,chaos:3,drama:3,social:4,yolo:4,solo:3},tips:['不要下达任何明确命令，TA 的人生信条是"你说啥我偏不"','善用反向心理：假装禁止 TA 做某事，TA 会主动去做','破防了就输了。保持绝对淡定是唯一出路'],compatTag:'永久博弈',compat:'你们的关系本质是一场永无终局的智力博弈。TA 测试你的极限，你测试 TA 的底线。乐趣在于过程，不在结果。'},
@@ -819,13 +921,24 @@ const TYPES={
 const TRAIT_DEFS=[
   {key:'cling',label:'粘人指数'},{key:'chaos',label:'破坏力'},
   {key:'drama',label:'演技天赋'},{key:'social',label:'社交热情'},
-  {key:'yolo', label:'作死概率'},{key:'solo',  label:'独立性'},
+  {key:'yolo', label:'冒险指数'},{key:'solo',  label:'独立性'},
 ];
 
 // ============================================================
 // STATE & QUIZ LOGIC
 // ============================================================
-let petName='', currentQ=0, answers={EI:[],SN:[],TF:[],JP:[]};
+let petName='', petType='cat', currentQ=0, answers={EI:[],SN:[],TF:[],JP:[]};
+let QS = QS_CAT;
+
+function selectPetType(type){
+  petType=type;
+  QS = type==='dog' ? QS_DOG : QS_CAT;
+  document.getElementById('pt-cat').classList.toggle('sel', type==='cat');
+  document.getElementById('pt-dog').classList.toggle('sel', type==='dog');
+  const subs = {cat:['它不需要你（谎言）','选了'], dog:['它爱你它非常爱你','选了']};
+  document.getElementById('pt-cat').querySelector('.pt-sub').textContent = type==='cat' ? subs.cat[1] : subs.cat[0];
+  document.getElementById('pt-dog').querySelector('.pt-sub').textContent = type==='dog' ? subs.dog[1] : subs.dog[0];
+}
 
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -833,10 +946,13 @@ function showScreen(id){
   window.scrollTo(0,0);
 }
 function startQuiz(){
+  if(!petType){ toast('先选猫还是狗 👆'); return; }
   petName=document.getElementById('pet-name-input').value.trim()||'主子';
   answers={EI:[],SN:[],TF:[],JP:[]};
   currentQ=0;
   document.getElementById('q-pet').textContent=petName;
+  const icon = petType==='dog' ? '🐶' : '🐱';
+  document.querySelector('.q-tag').innerHTML=`${icon} <span id="q-pet">${petName}</span>`;
   showScreen('quiz'); renderQ();
 }
 function goBack(){
@@ -859,11 +975,21 @@ function renderQ(){
     list.appendChild(btn);
   });
 }
+
+// 默认选猫
+document.addEventListener('DOMContentLoaded',()=>selectPetType('cat'));
 function pick(score,btn,dim){
   if(document.querySelector('.opt.sel')) return;
   btn.classList.add('sel');
   answers[dim].push(score);
-  setTimeout(()=>{ currentQ++; if(currentQ>=QS.length){ showScreen('loading'); setTimeout(showResult,1900); } else renderQ(); },380);
+  setTimeout(()=>{
+    currentQ++;
+    if(currentQ>=QS.length){
+      document.querySelector('.l-icon').textContent = petType==='dog' ? '🐶' : '🐱';
+      document.querySelector('.l-lbl').textContent = petType==='dog' ? '正在分析狗狗的灵魂…' : '正在解析猫猫的人格矩阵…';
+      showScreen('loading'); setTimeout(showResult,1900);
+    } else renderQ();
+  },380);
 }
 
 // ============================================================
@@ -881,7 +1007,7 @@ function calc(){
 function showResult(){
   const r=calc();
   const data=TYPES[r.type]||TYPES['INTP'];
-  const avcfg=AVATARS[r.type]||AVATARS['INTP'];
+  const avcfg=Object.assign({}, AVATARS[r.type]||AVATARS['INTP'], { ear: petType==='dog' ? 'dog' : 'cat' });
 
   // Avatar
   document.getElementById('r-avatar').innerHTML=makeSVG(avcfg);
