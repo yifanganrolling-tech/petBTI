@@ -94,7 +94,7 @@ html,body { height:100%; font-family:'Inter',-apple-system,system-ui,sans-serif;
 
 /* Avatar */
 .r-avatar { width:180px; height:180px; border-radius:20px; overflow:hidden; margin:0 auto 24px; box-shadow:0 0 0 1px rgba(0,153,255,.25),0 0 32px rgba(0,153,255,.12); display:flex; align-items:center; justify-content:center; }
-.r-avatar svg { width:100%; height:100%; }
+.r-avatar svg, .r-avatar img { width:100%; height:100%; }
 
 .r-eyebrow { display:inline-flex; align-items:center; gap:6px; background:var(--frosted); box-shadow:var(--ring); border-radius:100px; padding:5px 14px; font-size:11px; font-weight:500; color:var(--silver); letter-spacing:.5px; margin-bottom:16px; }
 .r-for { font-size:13px; font-weight:500; color:var(--silver); margin-bottom:10px; }
@@ -1010,7 +1010,9 @@ function showResult(){
   const avcfg=Object.assign({}, AVATARS[r.type]||AVATARS['INTP'], { ear: petType==='dog' ? 'dog' : 'cat' });
 
   // Avatar
-  document.getElementById('r-avatar').innerHTML=makeSVG(avcfg);
+  const prefix = petType==='dog' ? 'dog' : 'cat';
+  const ossBase = 'https://rollingai-service-oss.oss-cn-beijing.aliyuncs.com/petBTI/img';
+  document.getElementById('r-avatar').innerHTML=`<img src="${ossBase}/${prefix}-${r.type}.png" style="width:100%;height:100%;object-fit:cover;">`;
 
   // Hero
   document.getElementById('r-for').textContent=petName+' 的人格类型是';
